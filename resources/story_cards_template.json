@@ -1,0 +1,124 @@
+{
+	"Help" : "Template story card deck.",
+	"card_types_list" : [
+		"Title", "Opening", "Opening/Story", "Story", "Closing"
+	],
+	"action_types_list" : [
+		"meanwhile", "trade_lines", "steal_lines", "stir_pot"
+	],
+	"card_types" : [
+		{
+			"card_type" : "Title",
+			"maximum_count" : 90,
+			"Help" : "The title of a story"
+		},
+		{
+			"card_type" : "Opening",
+			"maximum_count" : 20,
+			"Help" : "Story opening line(s)"
+		},
+		{
+			"card_type" : "Opening/Story",
+			"maximum_count" : 40,
+			"Help" : "Story lines that can also be used as Opening lines."
+		},
+		{
+			"card_type" : "Story",
+			"maximum_count" : 164,
+			"Help" : "Story body lines."
+		},
+		{
+			"card_type" : "Closing",
+			"maximum_count" : 40,
+			"Help" : "Closing lines."
+		},
+		{
+			"card_type" : "Action",
+			"maximum_count" : 46,
+			"Help" : "Player actions."
+		}
+	],
+	"action_types" : [
+		{
+			"action_type" : "meanwhile",
+			"Help" : "Play a 'meanwhile' in front of a story element that just doesn't make sense in the place or time of the narrative.",
+			"text" : "Meanwhile",
+			"quantity" : 16
+		},
+		{
+			"action_type" : "draw_new",
+			"Help" : "Discard up to 4 cards and draw replacements.",
+			"text" : "Draw New",
+			"quantity" : 8
+		},
+		{
+			"action_type" : "trade_lines",
+			"Help" : "Trade an Opening or Story element that has been played with that from another player's story.",
+			"text" : "Trade Line",
+			"quantity" : 8
+		},
+		{
+			"action_type" : "steal_lines",
+			"Help" : "A player steals a story card from a story card played by another player.",
+			"text" : "Steal Line",
+			"quantity" : 8
+		},
+		{
+			"action_type" : "stir_pot",
+			"Help" : "Each player selects a story element from their deck and passes it to the person to their left.",
+			"text" : "Stir the Pot",
+			"quantity" : 6
+		}
+	],
+	"cards" : {
+		"Help" : "Samples only. Cards are loaded from genre text files",
+		"Title" : [
+			{
+				"number" : 0,
+				"genre" : "Horror",
+				"card_type" : "Title",
+				"text" : "Haunting Refrains of the Damned"
+			},
+			{
+				"number" : 1,
+				"genre" : "Horror",
+				"card_type" : "Title",
+				"text" : "Heartbeat of the Hellish Drum"
+			}
+		],
+		"Opening" : [
+			{
+				"number" : 0,
+				"genre" : "Horror",
+				"card_type" : "Opening",
+				"text" : "The old house on the hill had been abandoned for decades, but something inside still whispered in the darkness."
+			},
+			{
+				"number" : 1,
+				"genre" : "Horror",
+				"card_type" : "Opening",
+				"text" : "The forest was quiet, except for the sound of footsteps that seemed to follow Samantha wherever she went."
+			}
+		],
+		"Opening/Story" : [
+			{
+				"number" : 0,
+				"genre" : "Horror",
+				"card_type" : "Opening/Story",
+				"text" : "The old house on the hill had been abandoned for decades, but something inside still whispered in the darkness."
+			},
+			{
+				"number" : 1,
+				"genre" : "Horror",
+				"card_type" : "Opening/Story",
+				"text" : "The forest was quiet, except for the sound of footsteps that seemed to follow Samantha wherever she went."
+			}
+		],
+		"Story" : [
+		
+		],
+		"Closing" : [
+		
+		]
+	}
+}
