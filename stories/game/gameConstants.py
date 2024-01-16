@@ -5,6 +5,7 @@ Created on Dec 7, 2023
 '''
 from enum import Enum
 from typing import Dict
+import json
 
 class GameParametersType(Enum):  # A.K.A. game mode
     TEST = "test"
@@ -23,6 +24,20 @@ class CardType(Enum):
     STORY = "Story"
     CLOSING = "Closing"
     ACTION = "Action"
+
+class CardTypeEncoder(json.JSONEncoder):
+    def encode(self, obj):
+        print("CLS")
+        if isinstance(obj, dict):
+            message = [""]
+            for k in obj.keys():
+                message.append(f"'{k}':{str(obj[k])}")
+            message.append("")
+            message = message[1:len(message)-2]
+            message = ",".join(message)
+            return "{" + message + "}"
+        # let the base class default method raise the TypeError
+        return json.JSONEncoder.default(self, obj)
     
 class GenreFilenames(Enum):
     TITLES = "titles_"
@@ -37,14 +52,17 @@ class ActionType(Enum):
     STEAL_LINES = "steal_lines"
     STIR_POT = "stir_pot"
     DRAW_NEW = "draw_new"
+    CHANGE_NAME = "change_name"
 
 class GameConstants(object):
     '''
     Define global constants
     '''
     COMMANDS = ['add', 'deal', 'discard', 'done', 'draw', 'end', 
-            'game_status', 'help', 'info', 'list', 'log_message', 'next', 'play', 
-            'read', 'save', 'set', 'start', 'status', 'who']
+            'game_status', 'help', 'info', 'list', 'list_numbered', 'ln', 'log_message', 'ls', 'next', 'play', 
+            'read', 'save', 'set', 'show', 'start', 'status', 'who']
+    
+    CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files
      
     def __init__(self, params:Dict={} ):
         '''

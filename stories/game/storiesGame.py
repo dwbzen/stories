@@ -46,7 +46,7 @@ class StoriesGame(StoriesObject):
         self._start_datetime:datetime = None
         self._end_datetime:datetime = None
         
-        self._create_story_decks()   # creates the CardDecks for StoryCards and player discards
+        self._create_story_decks()    # creates the CardDecks for StoryCards and player discards
         self._deal_size = 10          # max number of cards in a player's hand
         #
         # create & initialize the GameState which includes a list of Players
@@ -71,15 +71,26 @@ class StoriesGame(StoriesObject):
     def genre(self)->GenreType:
         return self._genre
     
-    def _create_story_decks(self):
+    def _create_story_decks(self, character_aliases:dict=None):
         """Load the story decks for a given genre (story_card_deck)
             Also creates an empty CardDeck for player discards (story_discard_deck)
+            Arguments:
+                aliases - optional 4-element dict of character aliases
+                        This overrides settings in the gameParameters files.
         """
-        self._story_card_deck = CardDeck(self.resource_folder, self.genre)
+        aliases = self.game_parameters.character_aliases if character_aliases is None else character_aliases
+        self._story_card_deck = CardDeck(self.resource_folder, self.genre, aliases=aliases)
         self._story_discard_deck = CardDeck(self.resource_folder, self.genre, load_deck=False)
         
+    def set_character_aliases(self, names:List[str]):
+        """Updates story_card_deck with new character alias names
+            Arguments:
+                names - a List of 4 alias names (str)
+        """
+        self._story_card_deck.update_character_aliases(names)
+        
     def add_to_discard(self, card:StoryCard):
-        self._story_discard_deck.append(card)
+        self._story_discard_deck.deck_cards.append(card)
     
     @property
     def game_parameters(self) -> GameParameters:
@@ -160,10 +171,29 @@ class StoriesGame(StoriesObject):
             # draw the top card - the one with index len-1
             #
             ind = self._story_discard_deck.size() - 1
-            card = self._story_discard_deck[ind]
+            card = self._story_discard_deck.deck_cards[ind]
             del self._story_discard_deck[ind, ind+1]
         else:
             message = "No discards to draw from"    # card is None
         
         return card, message
         
+    def get_discard(self)->tuple():
+        card = None
+        message = None
+        if self._story_discard_deck.size() > 0:
+            #
+            # get the top card - the one with index len-1
+            #
+            ind = self._story_discard_deck.size() - 1
+            card = self._story_discard_deck.deck_cards[ind]
+            message = str(card)
+        else:
+            message = "No discards to draw from"    # card is None
+        
+        return card, message
+    
+    def get_cards_by_type(self, card_type:str)->List[str]:
+        return self._story_card_deck.get_cards_by_type(card_type)
+    
+    

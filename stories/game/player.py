@@ -5,7 +5,7 @@ Created on Dec 8, 2023
 '''
 
 from game.storiesObject import StoriesObject
-from game.gameConstants import GameConstants
+from game.gameConstants import GameConstants, CardType
 from game.gameUtils import GameUtils
 from game.storyCardHand import StoryCardHand
 from game.storyCard import StoryCard
@@ -36,6 +36,7 @@ class Player(StoriesObject):
         self._num_cards_played = 0      # on this players turn, determines the #cards to discard
         self._num_cards_discarded = 0   # must discard the same number played
         self._card_drawn = False        # set to True when the player draws a card from one of the game decks
+        self._story_elements_played = {CardType.TITLE : 0, CardType.OPENING : 0, CardType.STORY : 0, CardType.CLOSING : 0, CardType.ACTION : 0}
     
     @property
     def player_id(self):
@@ -135,6 +136,10 @@ class Player(StoriesObject):
     def story_card_hand(self)->StoryCardHand:
         return self._story_card_hand
     
+    @property
+    def story_elements_played(self)->Dict[CardType,int]:
+        return self._story_elements_played
+    
     def add_card(self, card:StoryCard):
         self.story_card_hand.add_card(card)
         
@@ -147,6 +152,35 @@ class Player(StoriesObject):
         """Adds a command to the player's command_history
         """
         self._command_history.append(command)
+        
+    def play_card(self, card_number:int)->StoryCard|None:
+        card_played = self.story_card_hand.play_card(card_number)
+        if card_played is not None:
+            card_type = card_played.card_type
+            if card_type is CardType.OPENING_STORY:     # card played as Opening or Story
+                open_count = self.story_elements_played[CardType.OPENING]
+                story_count = self.story_elements_played[CardType.STORY]
+                if open_count == 0:     # treat as OPENING
+                    self.story_elements_played[CardType.OPENING] = 1
+                else:                   # treat as story body
+                    self.story_elements_played[CardType.STORY] = 1 + story_count
+            else:
+                count = self.story_elements_played[card_type]
+                self.story_elements_played[card_type] = 1 + count
+                
+            self.num_cards_played = self.num_cards_played + 1
+            
+        return card_played
+    
+    def discard(self, card_number:int)->StoryCard:
+        """Discard card as indicated by card_number from a player's hand
+            and adds to the game discard deck.
+        """
+        card_discarded = self.story_card_hand.remove_card(card_number)
+        if card_discarded is not None:
+            self.num_cards_discarded = self.num_cards_discarded + 1
+            
+        return card_discarded
         
     def end_turn(self)->CommandResult:
         """Cleanup and check for errors after my turn

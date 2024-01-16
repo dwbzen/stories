@@ -4,18 +4,19 @@ Created on Dec 22, 2023
 @author: don_bacon
 '''
 
-from game.gameConstants import GameConstants, ActionType, CardType
+from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder
 from game.storiesGame import StoriesGame
 from game.commandResult import CommandResult
 from game.gameState import GameState
 from game.player import Player
 from game.storyCard import StoryCard
+from game.storyCardList import StoryCardList
 
 from typing import Tuple, List
 import joblib
 import random, json, sys
 import logging
-from game.storyCardList import StoryCardList
+
 
 class GameEngineCommands(object):
     """Implementation of StoriesGame player commands.
@@ -173,32 +174,48 @@ class GameEngineCommands(object):
             # add this drawn card to the player hand
             player._story_card_hand.add_card(card)
             player.card_drawn = True
-            message = f"{player.player_initials} drew a {card.card_type.value} card. Please play or discard 1 card."
+            message = f"{player.player_initials} drew a {card.card_type.value} card: {card.text}\n Please play or discard 1 card."
             result = CommandResult(CommandResult.SUCCESS, message, done_flag=False)
+            
         return result
 
-    
-    def play(self, card_number) ->CommandResult:
-        """Play a story/action card
+    def discard(self, card_number:int)->CommandResult:
+        """Discard card as indicated by card_number from a player's hand
+            and adds to the game discard deck.
         """
         player = self.game_state.current_player
-        card_played = player.story_card_hand.play_card(card_number)
+        card_discarded = player.discard(card_number)
+        if card_discarded is None:
+            message = f"You are not holding a card with number {card_number}"
+            result = CommandResult(CommandResult.ERROR, message, False)
+            
+        else:
+            message = f"You are discarding {card_number}. {card_discarded.text}"
+            self.stories_game.add_to_discard(card_discarded)
+            result = CommandResult(CommandResult.SUCCESS, message, True)
+        return result
+        
+    
+    def play(self, card_number:int, **kwargs) ->CommandResult:
+        """Play a story/action card
+            Arguments:
+                card_number - the card in 
+        """
+        player = self.game_state.current_player
+        card_played = player.play_card(card_number)
         if card_played is None:
             message = f"You are not holding a card with number {card_number}"
             result = CommandResult(CommandResult.ERROR, message, False)
             
         else:
             message = f"You played {card_number}. {card_played.text}"
-            #
-            # draw a card to replace the one we played
-            #
             result = CommandResult(CommandResult.SUCCESS, message, True)
 
         return result
 
-    def list(self, what='hand', initials:str='me', how='regular') ->CommandResult:
+    def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
         """List the cards held by the current player
-            Arguments: what - 'hand' or 'story'
+            Arguments: what - 'hand', 'story'
                 initials - a player's initials, defaults to the current player "me"
                 how - 'numbered' for a numbered list, 'regular', the default, for no numbering
             Returns: CommandResult.message is the stringified list of str(card) in the player's hand or story
@@ -228,24 +245,51 @@ class GameEngineCommands(object):
             
         return card_text
     
+    def show(self, what)->CommandResult:
+        """Displays the top card of the discard pile
+            Arguments:
+                what - what to display: discard (top card of the discard pile) 
+                or a story element class: "Title", "Opening", "Opening/Story", "Story", "Closing", "Action"
+            Returns: CommandResult.message is the str(card) for discard, a numbered list of str for story element classes.
+        """
+        message = ""
+        if what.lower()=="discard":
+            card,message = self.stories_game.get_discard()
+            return_code = CommandResult.SUCCESS if card is not None else CommandResult.ERROR
+            done_flag = True if card is not None else False
+        else:    # display all the elements of a given story class
+            done_flag = True
+            return_code = CommandResult.SUCCESS
+            card_type = what.title()     # just in case
+            cards = self.stories_game.get_cards_by_type(card_type)    # what must be a valid card_type.value
+            if len(cards) > 0:   # List[str]
+                n = 1
+                for card in cards:
+                    message = f"{message}{n}.  {card}"
+                    n += 1
+            result = CommandResult(return_code, message, done_flag)
+        
+        return result
         
     def read(self, initials:str=None)->CommandResult:
         """Display a player's story in a readable format.
         """
-        #TODO
         player = self.game_state.current_player if initials is None else self.get_player(initials)
         done_flag = True
         message = player.story_card_hand.my_story_cards.to_string()
 
         return CommandResult(CommandResult.SUCCESS, message, done_flag)
     
+    def status(self, initials:str=None)->CommandResult:
+        player = self.game_state.current_player if initials is None else self.get_player(initials)
+        message = json.dumps(player.story_elements_played, cls=CardTypeEncoder)
+        return CommandResult(CommandResult.SUCCESS, message, True)
         
     def log_message(self, message):
         """Logs a given message to the log file and console if debug flag is set
         """
         self.log(message)
 
-        
 
     def execute_action_card(self,  player:Player, actionCard:StoryCard) -> CommandResult:
         """Executes a StoryCard that has an ActionType

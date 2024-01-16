@@ -10,6 +10,7 @@ from game.player import Player
 from game.storiesGameEngine import StoriesGameEngine
 from game.gameConstants import GameParametersType
 
+from typing import List
 import argparse, time
 import logging
 
@@ -26,7 +27,7 @@ class GameRunner(object):
               are set from stories_game
             
     """
-    def __init__(self, installationId:str, genre:str, total_points:int, log_level:str, game_mode:str, stories_game:StoriesGame|None=None):
+    def __init__(self, installationId:str, genre:str, total_points:int, log_level:str, game_mode:str, aliases:List[str], stories_game:StoriesGame|None=None):
         """
         Constructor
         """
@@ -35,7 +36,7 @@ class GameRunner(object):
         self._total_points = total_points
         self._game_mode = game_mode 
         debug_flag = log_level == 'debug'
-        self._debug = debug_flag          # traces the action by describing each step
+        self._debug = debug_flag           # traces the action by describing each step
         self._game_engine = None           # GameEngine instance
         self._stories_game = stories_game
         
@@ -51,7 +52,10 @@ class GameRunner(object):
             pass
         else:   # restore an existing game
             raise ValueError(f"Sorry restore game is not implemented,")
-        
+        if aliases is not None:
+            character_aliases = aliases.split(",")          # there should be 4 names
+            self._stories_game.set_character_aliases(character_aliases)
+    
         self._restricted_commands = ["set", "deal"]             # can not be played in production mode
         self._action_commands = ["draw", "play", "discard" ]    # increment turns for solo game
         
@@ -140,13 +144,15 @@ class GameRunner(object):
     
 def main():
     parser = argparse.ArgumentParser(description="Run a command-driven Stories Game for 1 to 6 players")
-    parser.add_argument("--players", "-p", help="The number of players", type=int, choices=range(1,6), default=3)
+    parser.add_argument("--nplayers", "-n", help="The number of players", type=int, choices=range(1,6), default=3)
+    parser.add_argument("--names", help="Comma-separated list of player names. If set, this determines #of players and overrides --players")
     parser.add_argument("--points", help="Total game points", type=int, choices=range(10, 100), default=20)
     parser.add_argument("--params", help="Game parameters type: 'test', 'prod', or 'custom' ", type=str, \
                         choices=["test","prod","custom"], default="test")
     parser.add_argument("--gameid", help="Game ID", type=str, default=None)
     parser.add_argument("--loglevel", help="Set Python logging level", type=str, choices=["debug","info","warning","error","critical"], default="warning")
     parser.add_argument("--genre", help="Story genre", type=str, choices=["horror","romance","noir"], default="horror")
+    parser.add_argument("--aliases", help="Comma-separate list of 4 character aliases. This overrides gameParameters settings")
     args = parser.parse_args()
     
     total_points = args.points
@@ -155,16 +161,26 @@ def main():
     careers_game = None
     gameId = args.gameid
     current_player = None
+    player_names = args.names
+    players = None
+    player_initials = []
     
     game_mode = "prod" if args.params=="test_prod" else args.params
-    game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, stories_game=None)
+    game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, args.aliases, stories_game=None)
     #
-    # create players and deal the story cards
+    # create players
     #
-    nplayers = args.players
+    nplayers = args.nplayers
+    if player_names is not None:
+        players = player_names.split(",")
+        nplayers = len(players)    # overrides --nplayers
+        for p in players:
+            p = f"{p.upper()}XX" if len(p) <3 else p.upper()
+            player_initials.append(p[0:3])
+            
     for i in range(nplayers):
-        player_name = f"Player_{i+1}"
-        initials = f"PN{i+1}"
+        player_name = f"Player_{i+1}" if players is None else players[i]
+        initials = f"PN{i+1}" if players is None else player_initials[i]
         email = f"{player_name}@gmail.com"
         player_id = player_name
         game_runner.execute_command(f"add player {player_name} {player_id} {initials} {email}")

@@ -4,12 +4,13 @@
 		"Title", "Opening", "Opening/Story", "Story", "Closing"
 	],
 	"action_types_list" : [
-		"meanwhile", "trade_lines", "steal_lines", "stir_pot"
+		"meanwhile", "trade_lines", "steal_lines", "stir_pot", "change_name"
 	],
+	"characters" : [ "Michael", "Nick", "Samantha", "Vivian" ],
 	"card_types" : [
 		{
 			"card_type" : "Title",
-			"maximum_count" : 90,
+			"maximum_count" : 20,
 			"Help" : "The title of a story"
 		},
 		{
@@ -24,17 +25,17 @@
 		},
 		{
 			"card_type" : "Story",
-			"maximum_count" : 164,
+			"maximum_count" : 100,
 			"Help" : "Story body lines."
 		},
 		{
 			"card_type" : "Closing",
-			"maximum_count" : 40,
+			"maximum_count" : 20,
 			"Help" : "Closing lines."
 		},
 		{
 			"card_type" : "Action",
-			"maximum_count" : 46,
+			"maximum_count" : 32,
 			"Help" : "Player actions."
 		}
 	],
@@ -43,31 +44,43 @@
 			"action_type" : "meanwhile",
 			"Help" : "Play a 'meanwhile' in front of a story element that just doesn't make sense in the place or time of the narrative.",
 			"text" : "Meanwhile",
-			"quantity" : 16
+			"multi_card" : 1,
+			"quantity" : 4
 		},
 		{
 			"action_type" : "draw_new",
 			"Help" : "Discard up to 4 cards and draw replacements.",
 			"text" : "Draw New",
-			"quantity" : 8
+			"multi_card" : 1,
+			"quantity" :4
 		},
 		{
 			"action_type" : "trade_lines",
 			"Help" : "Trade an Opening or Story element that has been played with that from another player's story.",
 			"text" : "Trade Line",
-			"quantity" : 8
+			"multi_card" : 0,
+			"quantity" : 2
 		},
 		{
 			"action_type" : "steal_lines",
 			"Help" : "A player steals a story card from a story card played by another player.",
 			"text" : "Steal Line",
-			"quantity" : 8
+			"multi_card" : 1,
+			"quantity" : 2
 		},
 		{
 			"action_type" : "stir_pot",
 			"Help" : "Each player selects a story element from their deck and passes it to the person to their left.",
 			"text" : "Stir the Pot",
-			"quantity" : 6
+			"multi_card" : 0,
+			"quantity" : 2
+		},
+		{
+			"action_type" : "change_name",
+			"Help" : "Change the character name on a selected story card to a different alias or pronoun.",
+			"text" : "Change character name",
+			"multi_card" : 0,
+			"quantity" : 2
 		}
 	],
 	"cards" : {

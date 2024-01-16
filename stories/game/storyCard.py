@@ -13,6 +13,10 @@ class StoryCard(StoriesObject):
     A Story card has a CardType that indicates how it can be used -
     as a Title, Opening, Opening or Story, Story, or Closing -
     and the text. The text consists of 1 or more sentences.
+    If the multi_card flag on an action card is True, the player
+    may play an additional story card at the same time.
+    The syntax is comma-separated card numbers with the\
+    action multi-card appearing first.
     """
 
 
@@ -26,6 +30,7 @@ class StoryCard(StoriesObject):
         self._text = text
         self._action_type = actionType
         self._active = True
+        self._multi_card = False
         
     @property
     def genre(self)->GenreType:
@@ -39,9 +44,17 @@ class StoryCard(StoriesObject):
     def number(self)->int:
         return self._number
     
+    @number.setter
+    def number(self, value):
+        self._number = value
+    
     @property
     def text(self)->str:
         return self._text
+    
+    @text.setter
+    def text(self, value):
+        self._text = value
     
     @property
     def action_type(self)->ActionType|None:
@@ -54,6 +67,14 @@ class StoryCard(StoriesObject):
     @active.setter
     def active(self, state:bool):
         self._active = state
+    
+    @property
+    def multi_card(self)->bool:
+        return self._multi_card
+    
+    @multi_card.setter
+    def multi_card(self, value:bool):
+        self.multi_card = value
     
     def to_string(self)->str:
         card_text = f"{self.text}"

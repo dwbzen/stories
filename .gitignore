@@ -1,0 +1,12 @@
+venv
+.idea
+__pycache__
+log
+games
+dist
+build
+portals.egg-info
+.vs
+.vscode
+.pydevproject
+.project

@@ -104,8 +104,25 @@ class StoryCardHand(StoriesObject):
             card = self._cards.get(ind)
             self._my_story_cards.add_card(card)
             self._cards.remove(ind)
-        
         return card
+    
+    def remove_card(self, card_number)->StoryCard|None:
+        """Removes a selected StoryCard from the player's hand. This function is used when a player discards
+            to the game discard pile.
+            Arguments:
+                card_number - the number of the card to play.
+            Returns:
+                the StoryCard instance selected or None if no card with that number exists
+                
+            The selected card is removed from the player's hand (self.cards)
+        """
+        ind = self._cards.index_of(card_number)
+        card = None
+        if ind >= 0:
+            card = self._cards.get(ind)
+            self._cards.remove(ind)
+        return card
+        
     
     def to_dict(self)->dict:
         """Returns the cards in a player's hand and story as a Dict

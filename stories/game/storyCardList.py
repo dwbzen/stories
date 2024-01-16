@@ -62,6 +62,14 @@ class StoryCardList(StoriesObject):
             del self._cards[ind]
 
         return cards_removed
+    
+    def discard(self, card_number:int)->StoryCard:
+        card_ind = self.index_of(card_number)
+        card = None
+        if card_ind >= 0:
+            card = self._cards[card_ind]
+            del self._cards[card_ind]
+        return card
 
     def find_card(self, card_number:int)->StoryCard|None:
         return self._cards[self.index_of(card_number)] if self.card_exists(card_number) else None
