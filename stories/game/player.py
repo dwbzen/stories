@@ -14,7 +14,6 @@ from game.commandResult import CommandResult
 from datetime import datetime
 from typing import Dict, List, Union
 import json
-from game.commandResult import CommandResult
 
 class Player(StoriesObject):
     """
@@ -155,9 +154,15 @@ class Player(StoriesObject):
         
     def play_card(self, card_number:int)->StoryCard|None:
         card_played = self.story_card_hand.play_card(card_number)
-        if card_played is not None:
+        if card_played is None:
+            pass    # error handled by calling function
+        
+        else:
             card_type = card_played.card_type
-            if card_type is CardType.OPENING_STORY:     # card played as Opening or Story
+            if card_type is CardType.OPENING_STORY:
+                # card played as Opening or Story
+                # Treat as an OPENING if this player has not yet played an opening card
+                # otherwise play as a STORY card.
                 open_count = self.story_elements_played[CardType.OPENING]
                 story_count = self.story_elements_played[CardType.STORY]
                 if open_count == 0:     # treat as OPENING
@@ -169,8 +174,12 @@ class Player(StoriesObject):
                 self.story_elements_played[card_type] = 1 + count
                 
             self.num_cards_played = self.num_cards_played + 1
-            
+        
         return card_played
+    
+    def get_card(self, card_number:int)->StoryCard|None:
+        story_card = self.story_card_hand.get_card(card_number)
+        return story_card
     
     def discard(self, card_number:int)->StoryCard:
         """Discard card as indicated by card_number from a player's hand
@@ -185,21 +194,22 @@ class Player(StoriesObject):
     def end_turn(self)->CommandResult:
         """Cleanup and check for errors after my turn
         """
-        return_code = CommandResult.ERROR
+        return_code = CommandResult.SUCCESS
         done_flag = False
         if self.card_drawn:
             if self.num_cards_played == 0 and self.num_cards_discarded == 0:
                 return_code = CommandResult.ERROR
                 message = "You must play at least 1 card or discard 1 card"
-            elif self.num_cards_played >0 and self.num_cards_discarded != self.num_cards_played:
-                return_code = CommandResult.ERROR
-                message = f"You must discard {self.num_cards_played} cards"
-        else:
-            done_flag = True
-            message = "Turn Complete"
-            self.num_cards_played = 0
-            self.num_cards_discarded = 0
-            self.card_drawn = False
+            else:
+                done_flag = True
+                message = "Turn Complete"
+                self.num_cards_played = 0
+                self.num_cards_discarded = 0
+                self.card_drawn = False
+        else:   # you must draw a card
+            message = "You must draw a card and then either play or discard a card."
+            return_code = CommandResult.ERROR
+            
         return CommandResult(return_code, message, done_flag)
         
     def info(self):

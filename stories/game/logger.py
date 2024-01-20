@@ -12,7 +12,6 @@ class Logger(object):
     Global gateway to message logging
     '''
 
-
     def __init__(self, game_id, logfile_path, level=logging.INFO):
         '''
         Initialize logging configuration

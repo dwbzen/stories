@@ -10,7 +10,7 @@
 	"card_types" : [
 		{
 			"card_type" : "Title",
-			"maximum_count" : 20,
+			"maximum_count" : 25,
 			"Help" : "The title of a story"
 		},
 		{
@@ -30,12 +30,12 @@
 		},
 		{
 			"card_type" : "Closing",
-			"maximum_count" : 20,
+			"maximum_count" : 25,
 			"Help" : "Closing lines."
 		},
 		{
 			"card_type" : "Action",
-			"maximum_count" : 32,
+			"maximum_count" : 40,
 			"Help" : "Player actions."
 		}
 	],
@@ -45,42 +45,42 @@
 			"Help" : "Play a 'meanwhile' in front of a story element that just doesn't make sense in the place or time of the narrative.",
 			"text" : "Meanwhile",
 			"multi_card" : 1,
-			"quantity" : 4
+			"quantity" : 40
 		},
 		{
 			"action_type" : "draw_new",
 			"Help" : "Discard up to 4 cards and draw replacements.",
 			"text" : "Draw New",
 			"multi_card" : 1,
-			"quantity" :4
+			"quantity" :6
 		},
 		{
 			"action_type" : "trade_lines",
 			"Help" : "Trade an Opening or Story element that has been played with that from another player's story.",
 			"text" : "Trade Line",
 			"multi_card" : 0,
-			"quantity" : 2
+			"quantity" : 4
 		},
 		{
 			"action_type" : "steal_lines",
 			"Help" : "A player steals a story card from a story card played by another player.",
 			"text" : "Steal Line",
 			"multi_card" : 1,
-			"quantity" : 2
+			"quantity" : 4
 		},
 		{
 			"action_type" : "stir_pot",
 			"Help" : "Each player selects a story element from their deck and passes it to the person to their left.",
 			"text" : "Stir the Pot",
 			"multi_card" : 0,
-			"quantity" : 2
+			"quantity" : 4
 		},
 		{
 			"action_type" : "change_name",
 			"Help" : "Change the character name on a selected story card to a different alias or pronoun.",
 			"text" : "Change character name",
 			"multi_card" : 0,
-			"quantity" : 2
+			"quantity" : 6
 		}
 	],
 	"cards" : {

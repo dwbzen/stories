@@ -152,11 +152,22 @@ class StoryCardList(StoriesObject):
         deck_dict = {"cards" : cards}
         return deck_dict
     
-    def to_string(self)->str:
-        card_text = ""
-        for card in self._cards:
-            card_text = card_text + card.to_string()
-        return card_text       
+    def to_string(self, numbered:bool=True)->str:
+        if self.size() == 0: card_text = ""
+        elif self.size() == 1: card_text = self._cards[0].text    # Title card only
+        else:
+            card_text_list = []
+            n = 0
+            for card in self._cards:
+                if card.card_type is CardType.TITLE or card.card_type is CardType.CLOSING or not numbered:
+                    txt = card.text
+                else:
+                    txt = f"{n}. {card.text}"
+                    
+                card_text_list.append(txt)
+                n += 1
+            card_text = "".join(card_text_list)
+        return card_text
     
     def __str__(self)->str:
         card_text = ""

@@ -31,16 +31,18 @@ class StoriesGameEngine(object):
     
     Command :: <done> | <draw> | <discard> | <list> | <play> | <read>
         <draw> :: "draw"  ("new"|"discard")     ; draw a card from the main deck or the top card in the discard pile
-        <list> :: "list" ("hand"|"story")  [player_initials] [<how>]
+        <list> :: "list" ("hand"|"story")  [player_initials] [<how>] 
             <how> :: "regular" | "numbered"
+        <ls> :: "ls" ("hand"|"story")  [player_initials]     ; short for regular list
+        <ln> :: "ln" ("hand"|"story")  [player_initials]     ; short for numbered list
         <done> :: "done" | "next"               ; done with my turn - next player's turn
         <end game> :: "end game"                ; saves the current game state then ends the game
-        <play> :: "play" <card_number[,card_number]>          ; play 1 story card, or comma-separated list of a multi-card action card, story card.
-        <discard> :: "discard" <card_number>
+        <play> :: "play" <card_number[,card_number]>          ; play 1 story card, or comma-separated list consisting of a multi-card action card, and a story card.
+        <discard> :: "discard" <card_number>    ; discard the selected card and place it on top of the game discard pile
         <read> :: "read"                        ; Display a player's story in a readable format.
         <show> :: "show"                        ; show the top card in the discard pile
         
-        <card_number> :: <integer> |  <integer>,<integer>
+        <card_number> :: <integer> 
               
     Play sequence:
         draw 
@@ -269,10 +271,10 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.discard(card_number)
     
-    def play(self, card_number:int, **kwargs) ->CommandResult:
+    def play(self, cards:str) ->CommandResult:
         """Play 1 or 2 cards: 1 story card, or 1 multi-card action card and a story card
         """
-        return self._gameEngineCommands.play(card_number, kwargs)
+        return self._gameEngineCommands.play(str(cards))
 
     def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
         """List the Experience or Gateway cards held by the current player
@@ -306,10 +308,10 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.show(what)
         
-    def read(self, initials:str=None)->CommandResult:
+    def read(self, numbered:bool=True, initials:str=None)->CommandResult:
         """Display a player's story in a readable format.
         """
-        return self._gameEngineCommands.read(initials)
+        return self._gameEngineCommands.read(numbered, initials)
 
     def status(self, initials:str=None)->CommandResult:
         return self._gameEngineCommands.status(initials)

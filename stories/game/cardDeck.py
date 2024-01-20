@@ -153,14 +153,23 @@ class CardDeck(StoriesObject):
                 nxt = self._cards_index[self.next_index]
                 next_card = self._deck_cards[nxt]
                 self.next_index = self.next_index + 1
-                if types_to_omit is not None and next_card.card_type not in types_to_omit:
-                    next_card = None    # keep on drawing
+                if next_card.card_type in types_to_omit:
+                    # keep on drawing until we get a card whose card_type is not one to omit
+                    next_card = None
             else:
                 self.next_index = 0
                 self.shuffle()
+                
         return next_card
     
     def draw_cards(self, ncards:int)->List[StoryCard]:
+        """Draw cards from this deck.
+            Arguments:
+                ncards - the number of cards to draw. Must be >0
+            Returns:
+                List[StoryCard] of cards drawn.
+            Note that this function does not check for card types to omit.
+        """
         assert(ncards > 0)
         card_list = []
         for i in range(ncards):
@@ -205,13 +214,13 @@ class CardDeck(StoriesObject):
         """
         filenames = GameConstants.get_genre_filenames(genre)   # Dict with CardType as the key and the card text file as the value
         total_count = 0
+        number = 0
         for card_type in filenames.keys():
             filepath = f"{resource_folder}/genres/{genre.value}/{filenames[card_type]}"
             count = 0
             max_count = self._card_type_counts[card_type.value]
             with open(filepath) as fp:
                 lines =  fp.readlines()
-                number = 0
                 #
                 # create a random list max_count long so every game is different
                 #
@@ -240,7 +249,6 @@ class CardDeck(StoriesObject):
         #
         # add the action cards
         #
-        number = total_count
         count = 0
         card_type = CardType.ACTION
         for action in deck["action_types"]:
@@ -249,7 +257,7 @@ class CardDeck(StoriesObject):
             qty = action["quantity"]
             multi_card = action.get("multi_card", 0)==1
             for i in range(qty):
-                storyCard = StoryCard(genre, card_type, text, number, action_type)
+                storyCard = StoryCard(genre, card_type, text, number, action_type, multi_card)
                 self._deck_cards.append(storyCard)
                 number+=1
             count += qty

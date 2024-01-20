@@ -23,6 +23,7 @@ class GameParameters(object):
         self._default_game_points = params.get("default_game_points", 20)
         self._date_format = params.get("date_format", "yyyy-dd-mm")
         self._description = params.get("description", "No description")
+        self._bypass_error_checks = params.get("bypass_error_checks", False)
         
     def game_parameters(self):
         return self._game_parameters
@@ -42,4 +43,11 @@ class GameParameters(object):
     def character_aliases(self)->dict:
         return self._character_aliases
     
+    @property
+    def bypass_error_checks(self)->bool:
+        """If bypass_error_checks is True certain error checking is bypassed
+            including errors involving drawing and discarding cards.
+            Default value if not present in the gameParameters file is False.
+        """
+        return self._bypass_error_checks
     

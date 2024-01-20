@@ -2,5 +2,6 @@
 	"description" : "Default game parameters",
 	"date_format" : "yyyy-dd-mm",
 	"default_game_points" : 20,
+	"bypass_error_checks" : 0,
 	"character_alias" : {"Michael" : "Don", "Nick" : "Brian", "Samantha" : "Cheryl", "Vivian" : "Beth"}
 }

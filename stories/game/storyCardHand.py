@@ -91,7 +91,7 @@ class StoryCardHand(StoriesObject):
             Arguments:
                 card_number - the number of the card to play.
             Returns:
-                the StoryCard instance selected or None if no card with that number exists
+                the StoryCard instance selected or None if a card with that number doesn't exist
                 
             The selected card is removed from the player's hand (self.cards)
             and appended to their story (self.my_story_cards)
@@ -104,6 +104,19 @@ class StoryCardHand(StoriesObject):
             card = self._cards.get(ind)
             self._my_story_cards.add_card(card)
             self._cards.remove(ind)
+        return card
+    
+    def get_card(self, card_number)->StoryCard|None:
+        """Gets the selected StoryCard.
+            Arguments:
+                card_number - the number of the card to play.
+            Returns:
+                the StoryCard instance selected or None if no card with that number exists
+        """
+        ind = self._cards.index_of(card_number)
+        card = None
+        if ind >= 0:
+            card = self._cards.get(ind)
         return card
     
     def remove_card(self, card_number)->StoryCard|None:

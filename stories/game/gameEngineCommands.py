@@ -12,10 +12,8 @@ from game.player import Player
 from game.storyCard import StoryCard
 from game.storyCardList import StoryCardList
 
-from typing import Tuple, List
-import joblib
-import random, json, sys
-import logging
+from typing import List
+import logging, json
 
 
 class GameEngineCommands(object):
@@ -146,16 +144,81 @@ class GameEngineCommands(object):
     
     def done(self)-> CommandResult:
         """Complete the current player's turn
+            At the end of the last player's turn, check if all players have
+            played a TITLE and/or OPENING story card.
+            If so, add the CardType(s) to the GameState types_to_omit.
+            So on subsequent draws these card types are skipped.
         """
-        player = self.game_state.current_player
-        result = player.end_turn()
+        current_player = self.game_state.current_player
+        omit_types = []
+        if current_player.number == self.game_state.number_of_players - 1:
+            omit_types = self._check_types_to_omit()
+        result = current_player.end_turn()
         if result.return_code is CommandResult.SUCCESS:
             npn = self.game_state.set_next_player()
-            player = self.game_state.current_player
-
+            next_player = self.game_state.current_player
+            message = f"{result.message}. {next_player.player_initials}'s turn."
+        else:
+            message = result.message
+        if len(omit_types) > 0:
+            self.game_state.add_card_types_to_omit(omit_types)
+            msg = ",".join([x.value for x in omit_types])
+            message = f"{message}\nCard types omitted from future draws: {msg}"
+            #
+            # remove cards having a card type in types_to_omit 
+            # from the current_player's (the player whose turn is done) hand and replace with new cards
+            #
+            msg = self._update_player_hand(current_player, omit_types)
         return result
     
-    def draw(self, what:str="new", types_to_omit:List[CardType]=None) ->CommandResult:
+    def _check_types_to_omit(self)->List[CardType]:
+        """Check if all players have played a TITLE and/or OPENING story card.
+            Return: List[CardType] that have been played by all players
+        """
+        omit_types:List[CardType] = []
+        omit_title = True
+        omit_opening = True
+        for player in self.game_state.players:
+            omit_title &= player.story_elements_played[CardType.TITLE]>0
+            omit_opening &= player.story_elements_played[CardType.OPENING]>0
+        if omit_title:
+            omit_types.append(CardType.TITLE)
+        if omit_opening:
+            omit_types.append(CardType.OPENING)
+        return omit_types
+    
+    def _update_player_hand(self, current_player, omit_types:List[CardType])->str:
+        """Update a player's hand to remove cards of a given type
+            and replace with new drawn cards.
+        """
+        ncards = 0    # number of cards removed from the player's hand
+        message = ""
+        for card_type in omit_types:
+            ncards += current_player.story_card_hand.discard_cards(card_type)
+        for i in range(ncards):
+            result = self.draw_for(current_player, "new", i)
+            message = f"{message}\n{result.message}"
+            
+        return message
+    
+    def draw_for(self, player:Player, what:str="new", ordinal:int=1):
+        """Draw one new card for a given player, omitting card types
+            that are no longer needed. 
+        """
+        types_to_omit = self.game_state.types_to_omit    # possibly empty List[CardType]
+        card,message = self.stories_game.draw_card(what, types_to_omit)
+        if card is None:    # must be an error, message has the error message
+            result = CommandResult(CommandResult.ERROR, message, done_flag=False)
+        else:
+            # add this drawn card to the player hand
+            player._story_card_hand.add_card(card)
+            player.card_drawn = True
+            message = f"{ordinal}. {player.player_initials} drew a {card.card_type.value} ({card.number}): {card.text}"
+            result = CommandResult(CommandResult.SUCCESS, message, done_flag=False)
+            
+        return result
+    
+    def draw(self, what:str="new") ->CommandResult:
         """Draw a card from the deck OR from the top of the global discard deck
             Arguments:
                 what - 'new' : draw a card from the main deck. 'discard' : draw the top card from the game discard deck
@@ -164,19 +227,9 @@ class GameEngineCommands(object):
                 CommandResult with return_code set to SUCCESS or ERROR (if there are no cards left to draw from),
                     and message set to an error message OR if SUCCESS, the card_type drawn.
         """
-
         player = self.game_state.current_player
-        
-        card,message = self.stories_game.draw_card(what, types_to_omit)
-        if card is None:    # must be an error, message has the error message
-            result = CommandResult(CommandResult.ERROR, message, done_flag=False)
-        else:
-            # add this drawn card to the player hand
-            player._story_card_hand.add_card(card)
-            player.card_drawn = True
-            message = f"{player.player_initials} drew a {card.card_type.value} card: {card.text}\n Please play or discard 1 card."
-            result = CommandResult(CommandResult.SUCCESS, message, done_flag=False)
-            
+        result = self.draw_for(player, what)
+        result.message = f"{result.message}\n Please play or discard 1 card."
         return result
 
     def discard(self, card_number:int)->CommandResult:
@@ -196,21 +249,43 @@ class GameEngineCommands(object):
         return result
         
     
-    def play(self, card_number:int, **kwargs) ->CommandResult:
-        """Play a story/action card
+    def play(self, cards:str) ->CommandResult:
+        """Play a story/action card from a player's hand OR the discard deck
             Arguments:
-                card_number - the card in 
+                card_numbers - a card number or 2 card numbers separated by a colon.
+                    If 2 card numbers, the first must be multi-card Action card.
+                    Card number must be in the player's hand.
         """
         player = self.game_state.current_player
-        card_played = player.play_card(card_number)
-        if card_played is None:
-            message = f"You are not holding a card with number {card_number}"
-            result = CommandResult(CommandResult.ERROR, message, False)
+        card_numbers = cards.split(",")    # List[str]
+        if len(card_numbers) == 1:
+            card_number = int(card_numbers[0])
+            card_played = player.play_card(card_number)
+            if card_played is None:
+                message = f"You are not holding a card with number {card_number}"
+                result = CommandResult(CommandResult.ERROR, message, False)
+            else: 
+                message = f"You played {card_number}. {card_played.text}"
+                result = CommandResult(CommandResult.SUCCESS, message, True)
+                
+        elif len(card_numbers) == 2:
+            action_card_number = int(card_numbers[0])
+            story_card_number = int(card_numbers[1])
+            action_card = player.get_card(action_card_number)
+            story_card = player.get_card(story_card_number)
             
+            if action_card is None or story_card is None:
+                result = CommandResult(CommandResult.ERROR, f"You are not holding a card with numbers {action_card_number} or {story_card_number}", False)
+                
+            elif action_card.card_type is CardType.ACTION and action_card.multi_card:
+                action_card_played = player.play_card(action_card_number)
+                story_card_played = player.play_card(story_card_number)
+                message = f"You played {action_card_number}. {action_card_played.text} and {story_card_number}. {story_card_played.text}"
+                result = CommandResult(CommandResult.SUCCESS, message, True)
+            else:
+                result = CommandResult(CommandResult.ERROR, f"First card must be multi-card Action card {action_card_number}", False)
         else:
-            message = f"You played {card_number}. {card_played.text}"
-            result = CommandResult(CommandResult.SUCCESS, message, True)
-
+            result = CommandResult(CommandResult.ERROR, "Invalid input: Enter 1 or 2 card numbers", False)
         return result
 
     def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
@@ -271,12 +346,16 @@ class GameEngineCommands(object):
         
         return result
         
-    def read(self, initials:str=None)->CommandResult:
+    def read(self, numbered:bool, initials:str=None)->CommandResult:
         """Display a player's story in a readable format.
+            Arguments:
+                numbered - if True number the lines starting at 1 with the first story card.
+                        The Title and Closing line(s) are not numbered.
+                initials - the player's initials if other than the current player
         """
         player = self.game_state.current_player if initials is None else self.get_player(initials)
         done_flag = True
-        message = player.story_card_hand.my_story_cards.to_string()
+        message = player.story_card_hand.my_story_cards.to_string(numbered)
 
         return CommandResult(CommandResult.SUCCESS, message, done_flag)
     
@@ -289,7 +368,6 @@ class GameEngineCommands(object):
         """Logs a given message to the log file and console if debug flag is set
         """
         self.log(message)
-
 
     def execute_action_card(self,  player:Player, actionCard:StoryCard) -> CommandResult:
         """Executes a StoryCard that has an ActionType
@@ -307,6 +385,8 @@ class GameEngineCommands(object):
             case ActionType.TRADE_LINES:
                 pass    # TODO
             case ActionType.STIR_POT:
+                pass    # TODO
+            case ActionType.CHANGE_NAME:
                 pass    # TODO
         
         result = CommandResult(CommandResult.SUCCESS, message=message)

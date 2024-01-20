@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 from game.player import Player
 from game.storiesObject import StoriesObject
-from game.gameConstants import GameParametersType
+from game.gameConstants import GameParametersType, CardType
 from typing import List
 
 class GameState(StoriesObject):
@@ -45,7 +45,8 @@ class GameState(StoriesObject):
         self._game_complete = False
         self._game_parameters_type = game_parameters_type
         self._started = False
-        self._ = game_id
+        self._game_id = game_id
+        self._types_to_omit:List[CardType] = []    # CardTypes to omit when drawing. 
     
     @property
     def game_id(self):
@@ -149,7 +150,22 @@ class GameState(StoriesObject):
     
     @end_datetime.setter
     def end_datetime(self, value:datetime):
-        self._end_datetime = value    
+        self._end_datetime = value
+        
+    @property
+    def types_to_omit(self)->List[CardType]:
+        """CardTypes to omit when drawing a new card.
+            This list will either be empty, have 1 element or 2 elements.
+            CardTypes will be CardType.TITLE, CardType.OPENING
+        """
+        return self._types_to_omit
+    
+    def add_card_type_to_omit(self, card_type:CardType):
+        self._types_to_omit.append(card_type)
+    
+    def add_card_types_to_omit(self, card_types:List[CardType]):
+        for ct in card_types:
+            self._types_to_omit.append(ct)
     
     def get_elapsed_time(self) ->int:
         """Gets the elapsed game time
@@ -162,7 +178,7 @@ class GameState(StoriesObject):
         gametime = delta.seconds//60 if units=="minutes" else delta.seconds
         return gametime
     
-    def set_next_player(self):
+    def set_next_player(self)->int:
         """Returns the player number of the next player. And sets the value of current_player.
             If the current player is the first player (player number 0),
             the number of turns is incremented.

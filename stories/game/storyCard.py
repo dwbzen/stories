@@ -20,7 +20,7 @@ class StoryCard(StoriesObject):
     """
 
 
-    def __init__(self, genre:GenreType, cardType:CardType, text:str, number, actionType:ActionType=None):
+    def __init__(self, genre:GenreType, cardType:CardType, text:str, number, actionType:ActionType=None, multi_card=False):
         '''
         Constructor
         '''
@@ -30,7 +30,7 @@ class StoryCard(StoriesObject):
         self._text = text
         self._action_type = actionType
         self._active = True
-        self._multi_card = False
+        self._multi_card = multi_card
         
     @property
     def genre(self)->GenreType:
