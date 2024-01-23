@@ -249,43 +249,32 @@ class GameEngineCommands(object):
         return result
         
     
-    def play(self, cards:str) ->CommandResult:
+    def play(self, card_number:int, card_numbers:str|None) ->CommandResult:
         """Play a story/action card from a player's hand OR the discard deck
             Arguments:
-                card_numbers - a card number or 2 card numbers separated by a colon.
-                    If 2 card numbers, the first must be multi-card Action card.
-                    Card number must be in the player's hand.
+                card_number - the StoryCard to play.
+                card_numbers - additional comma-separated card numbers or None. card_numbers is required for certain types of action cards.
+                    
+            Example: play 110    ; play a single story card
         """
         player = self.game_state.current_player
-        card_numbers = cards.split(",")    # List[str]
-        if len(card_numbers) == 1:
-            card_number = int(card_numbers[0])
-            card_played = player.play_card(card_number)
-            if card_played is None:
-                message = f"You are not holding a card with number {card_number}"
+        story_card = player.story_card_hand.get_card(card_number)
+        if story_card is None:
+                message = f"Invalid card number {card_number}"
                 result = CommandResult(CommandResult.ERROR, message, False)
-            else: 
-                message = f"You played {card_number}. {card_played.text}"
-                result = CommandResult(CommandResult.SUCCESS, message, True)
-                
-        elif len(card_numbers) == 2:
-            action_card_number = int(card_numbers[0])
-            story_card_number = int(card_numbers[1])
-            action_card = player.get_card(action_card_number)
-            story_card = player.get_card(story_card_number)
+        
+        elif story_card.card_type is CardType.ACTION:
+            result = self._execute_action_card(player, story_card, str(card_numbers))
             
-            if action_card is None or story_card is None:
-                result = CommandResult(CommandResult.ERROR, f"You are not holding a card with numbers {action_card_number} or {story_card_number}", False)
-                
-            elif action_card.card_type is CardType.ACTION and action_card.multi_card:
-                action_card_played = player.play_card(action_card_number)
-                story_card_played = player.play_card(story_card_number)
-                message = f"You played {action_card_number}. {action_card_played.text} and {story_card_number}. {story_card_played.text}"
-                result = CommandResult(CommandResult.SUCCESS, message, True)
-            else:
-                result = CommandResult(CommandResult.ERROR, f"First card must be multi-card Action card {action_card_number}", False)
         else:
-            result = CommandResult(CommandResult.ERROR, "Invalid input: Enter 1 or 2 card numbers", False)
+            card_played = player.play_card(story_card)
+            if card_played is None:
+                message = f"Invalid card number {card_number}"
+                result = CommandResult(CommandResult.ERROR, message, False)
+            else:
+                message = f"You played {card_played.number}. {card_played.text}"
+                result = CommandResult(CommandResult.SUCCESS, message, True)
+                
         return result
 
     def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
@@ -332,6 +321,17 @@ class GameEngineCommands(object):
             card,message = self.stories_game.get_discard()
             return_code = CommandResult.SUCCESS if card is not None else CommandResult.ERROR
             done_flag = True if card is not None else False
+            
+        elif what.lower()=="all":
+            n = 1
+            for card_type in ["Title", "Opening", "Opening/Story", "Story", "Closing", "Action"]:
+                cards = self.stories_game.get_cards_by_type(card_type)
+                for card in cards:
+                    message = f"{message}{n}.  {card}"
+                    n += 1
+            done_flag = True
+            return_code = CommandResult.SUCCESS            
+                
         else:    # display all the elements of a given story class
             done_flag = True
             return_code = CommandResult.SUCCESS
@@ -342,7 +342,7 @@ class GameEngineCommands(object):
                 for card in cards:
                     message = f"{message}{n}.  {card}"
                     n += 1
-            result = CommandResult(return_code, message, done_flag)
+        result = CommandResult(return_code, message, done_flag)
         
         return result
         
@@ -369,26 +369,77 @@ class GameEngineCommands(object):
         """
         self.log(message)
 
-    def execute_action_card(self,  player:Player, actionCard:StoryCard) -> CommandResult:
+    def _execute_action_card(self,  player:Player, action_card:StoryCard, cards:str|None) -> CommandResult:
         """Executes a StoryCard that has an ActionType
+            Arguments:
+                player - a Player instance
+                action_card - a StoryCard with card_type CardType.ACTION
+                cards - a comma-separated list of additional card numbers or None
+                
+            Examples of Action cards:
+                meanwhile: play 249 110           ; card #249 is the meanwhile ActionCard, 110 is a story card
+                draw_new:  play 250 100,119,143   ; card #25 0 is the draw_new ActionCard, the cards to replace with new ones are 110,119,143
+                trade_lines:  play 251 178,92     ; card #251 is the trade_lines Action Card, 
+                                                    178 is a story card in my story, 92 is a story card in an opponent's story (so visible to all)
+                steal_lines:  play 252 93   ; card #252 is a steal_lines ActionCard, 93 is a story card in an opponent's story
+                                              The stolen card goes in my hand
+                stir_pot: play 266          ; card #266 is a stir_pot ActionCard. 
+                                              Each player selects a card from their hand and passes it to the person to their left
+                change_name: play 272 151 Brian,He    ; card #272 is a change_name ActionCard, 272 is a card in my current story.
+                                                        change instances of "Brian" in that card to "He"
+                NOTE that change_name supported only in the online version of the game
         """
-        action_type = actionCard.action_type        # ActionType
-        message = f'{player.player_initials} Playing  {actionCard.action_type}: {actionCard.text}'
+        action_type = action_card.action_type        # ActionType
+        card_numbers = [] if cards is None else cards.split(",")
+        story_cards = []
+        for num in card_numbers:
+            sc = player.story_card_hand.get_card(num)
+            if sc is None:
+                message = f"You are not holding a card with number {num}"
+                self.log(message)
+                return CommandResult(CommandResult.ERROR, message, False)
+            else:
+                story_cards.append(sc)
+        
+        message = f'{player.player_initials} Playing  {action_card.action_type}: {action_card.text}'
+        min_args = action_card.min_arguments
+        max_args = action_card.max_arguments
+        num_args = len(story_cards)
         self.log(message)
+        #
+        # check number of arguments is within range
+        #
+        if num_args < min_args or num_args > max_args:
+            message = f"{action_card.action_type} requires from {min_args} to {max_args} additional card numbers."
+            self.log(message)
+            return CommandResult(CommandResult.ERROR, message, False)
+        return_code = CommandResult.SUCCESS
+        done_flag = True
         match(action_type):
             case ActionType.DRAW_NEW:
-                pass    # TODO
-            case ActionType.MEANWHILE:
-                pass    # TODO
+                pass    # Discard up to 4 cards and draw replacements
+            case ActionType.MEANWHILE:    # requires an additional card to come after the "Meanwhile..."
+                story_card = story_cards[0]
+                action_card_played = player.play_card(action_card)
+                story_card_played = player.play_card(story_card)
+                message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
+                
             case ActionType.STEAL_LINES:
-                pass    # TODO
+                # Steal a story card played by another player4
+                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
+            
             case ActionType.TRADE_LINES:
-                pass    # TODO
+                # Trade an Opening or Story element that has been played with that from another player's story
+                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
+                    
             case ActionType.STIR_POT:
-                pass    # TODO
+                # Each player selects a story element from their deck and passes it to the person to their left
+                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
+                    
             case ActionType.CHANGE_NAME:
-                pass    # TODO
+                # Change the character name on a selected story card to a different alias or pronoun
+                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."    
         
-        result = CommandResult(CommandResult.SUCCESS, message=message)
+        result = CommandResult(return_code, message, done_flag)
         return result
         

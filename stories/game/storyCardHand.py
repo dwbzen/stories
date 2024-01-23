@@ -86,7 +86,7 @@ class StoryCardHand(StoriesObject):
         """
         return self._cards.card_type_counts()
     
-    def play_card(self, card_number)->StoryCard|None:
+    def play_card(self, card_number:int)->StoryCard|None:
         """Plays a selected StoryCard.
             Arguments:
                 card_number - the number of the card to play.
@@ -106,14 +106,14 @@ class StoryCardHand(StoriesObject):
             self._cards.remove(ind)
         return card
     
-    def get_card(self, card_number)->StoryCard|None:
-        """Gets the selected StoryCard.
+    def get_card(self, card_number:str|int)->StoryCard|None:
+        """Gets the selected StoryCard from a player's hand.
             Arguments:
-                card_number - the number of the card to play.
+                card_number - the number of the card to get.
             Returns:
                 the StoryCard instance selected or None if no card with that number exists
         """
-        ind = self._cards.index_of(card_number)
+        ind = self._cards.index_of(int(card_number))
         card = None
         if ind >= 0:
             card = self._cards.get(ind)

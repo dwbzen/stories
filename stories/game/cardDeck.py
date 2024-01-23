@@ -255,9 +255,11 @@ class CardDeck(StoriesObject):
             action_type = ActionType[action["action_type"].upper()]
             text = f'{action["text"]}\n'
             qty = action["quantity"]
-            multi_card = action.get("multi_card", 0)==1
+            max_arguments = action.get("max_arguments", 0)
+            min_arguments = action.get("min_arguments", 0)
+            story_element = action.get("story_element", 0)==1
             for i in range(qty):
-                storyCard = StoryCard(genre, card_type, text, number, action_type, multi_card)
+                storyCard = StoryCard(genre, card_type, text, number, action_type, min_arguments, max_arguments, story_element)
                 self._deck_cards.append(storyCard)
                 number+=1
             count += qty

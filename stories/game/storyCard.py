@@ -20,7 +20,7 @@ class StoryCard(StoriesObject):
     """
 
 
-    def __init__(self, genre:GenreType, cardType:CardType, text:str, number, actionType:ActionType=None, multi_card=False):
+    def __init__(self, genre:GenreType, cardType:CardType, text:str, number, actionType:ActionType=None, min_arguments=0, max_arguments=0, story_element=True):
         '''
         Constructor
         '''
@@ -30,7 +30,9 @@ class StoryCard(StoriesObject):
         self._text = text
         self._action_type = actionType
         self._active = True
-        self._multi_card = multi_card
+        self._min_arguments = min_arguments
+        self._max_arguments = max_arguments
+        self._story_element = story_element
         
     @property
     def genre(self)->GenreType:
@@ -69,12 +71,28 @@ class StoryCard(StoriesObject):
         self._active = state
     
     @property
-    def multi_card(self)->bool:
-        return self._multi_card
+    def min_arguments(self)->int:
+        return self._min_arguments
     
-    @multi_card.setter
-    def multi_card(self, value:bool):
-        self.multi_card = value
+    @min_arguments.setter
+    def min_arguments(self, value):
+        self._min_arguments = value
+        
+    @property
+    def max_arguments(self)->int:
+        return self._max_arguments
+    
+    @max_arguments.setter
+    def max_arguments(self, value):
+        self._max_arguments = value
+        
+    @property
+    def story_element(self)->bool:
+        return self._story_element
+    
+    @story_element.setter
+    def story_element(self, value):
+        self._story_element = value
     
     def to_string(self)->str:
         card_text = f"{self.text}"

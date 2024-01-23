@@ -271,10 +271,10 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.discard(card_number)
     
-    def play(self, cards:str) ->CommandResult:
+    def play(self, card_number:int, cards:str=None) ->CommandResult:
         """Play 1 or 2 cards: 1 story card, or 1 multi-card action card and a story card
         """
-        return self._gameEngineCommands.play(str(cards))
+        return self._gameEngineCommands.play(card_number, cards)
 
     def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
         """List the Experience or Gateway cards held by the current player

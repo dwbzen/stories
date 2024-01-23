@@ -5,14 +5,14 @@ Created on Dec 8, 2023
 '''
 
 from game.storiesObject import StoriesObject
-from game.gameConstants import GameConstants, CardType
+from game.gameConstants import CardType
 from game.gameUtils import GameUtils
 from game.storyCardHand import StoryCardHand
 from game.storyCard import StoryCard
 from game.commandResult import CommandResult
 
 from datetime import datetime
-from typing import Dict, List, Union
+from typing import Dict, List
 import json
 
 class Player(StoriesObject):
@@ -152,8 +152,20 @@ class Player(StoriesObject):
         """
         self._command_history.append(command)
         
-    def play_card(self, card_number:int)->StoryCard|None:
+    def play_card(self, card:int|StoryCard)->StoryCard|None:
+        """Plays a single card from the player's hand.
+            This assumes the card with the given number is a story element (Title, Opening, Opening/Story, or Closing)
+            and or an ActionCard where the story_element property is True (such as a meanwhile ActionCard)
+            Arguments:
+                card - the number of the card being played OR a StoryCard instance. Cannot be None
+            Returns:
+                The StoryCard if it exists, otherwise None.
+            This functional also updates counts of the type of story element played.
+        """
+        assert(card is not None)
+        card_number = card.number if isinstance(card, StoryCard) else card
         card_played = self.story_card_hand.play_card(card_number)
+        
         if card_played is None:
             pass    # error handled by calling function
         
@@ -176,6 +188,7 @@ class Player(StoriesObject):
             self.num_cards_played = self.num_cards_played + 1
         
         return card_played
+        
     
     def get_card(self, card_number:int)->StoryCard|None:
         story_card = self.story_card_hand.get_card(card_number)
