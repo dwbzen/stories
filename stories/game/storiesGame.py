@@ -201,4 +201,21 @@ class StoriesGame(StoriesObject):
     def get_cards_by_type(self, card_type:str)->List[str]:
         return self._story_card_deck.get_cards_by_type(card_type)
     
+    def get_cards(self)->List[str]:
+        """Gets remaining story cards in the order they appear in the story_card_deck (CardDeck)
+            Note that remaining cards are the cards not yet drawn by players.
+            Output Format for each card is the stringified StoryCard: <ordinal>. <card_type> <card_number> : <text>
+            @see StoryCard.__str__()
+        """
+        indexes = self._story_card_deck.cards_index    # List[int]
+        deck_cards = self._story_card_deck.deck_cards
+        cards = []
+        next_index = self._story_card_deck.next_index
+        for i in range(next_index, len(indexes)):
+            ind = indexes[next_index]
+            story_card = deck_cards[ind]
+            cards.append(str(story_card))
+            next_index += 1
+        return cards
+        
     

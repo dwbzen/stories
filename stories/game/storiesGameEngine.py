@@ -37,9 +37,12 @@ class StoriesGameEngine(object):
         <ln> :: "ln" ("hand"|"story")  [player_initials]     ; short for numbered list
         <done> :: "done" | "next"               ; done with my turn - next player's turn
         <end game> :: "end game"                ; saves the current game state then ends the game
+        <pass> :: "pass" <card_number>          ; pass the designated card in a player's hand to the player on his/her left (the next player)
         <play> :: "play" <card_number[,card_number]>          ; play 1 story card, or comma-separated list consisting of a multi-card action card, and a story card.
         <discard> :: "discard" <card_number>    ; discard the selected card and place it on top of the game discard pile
-        <read> :: "read"                        ; Display a player's story in a readable format.
+        <read> :: "read" ["numbered"]           ; Display a player's story in a readable format. Card numbers are also displayed
+                                                  if the optional "numbered" argument is included.
+        <rn> ::                                 ; alias for "read numbered"
         <show> :: "show"                        ; show the top card in the discard pile
         
         <card_number> :: <integer> 
@@ -275,6 +278,14 @@ class StoriesGameEngine(object):
         """Play 1 or 2 cards: 1 story card, or 1 multi-card action card and a story card
         """
         return self._gameEngineCommands.play(card_number, cards)
+    
+    def pass_card(self, card_number:int)->CommandResult:
+        """Pass a card in the current player's hand to the hand of the next player (to the left).
+            Arguments:
+                card_number - the number of the card to pass. It must exist in the current player's hand
+            This command does nothing in a solo game.
+        """
+        return self._gameEngineCommands.pass_card(card_number)
 
     def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
         """List the Experience or Gateway cards held by the current player
@@ -297,10 +308,10 @@ class StoriesGameEngine(object):
         """
         return self.list(how="numbered")
     
-    def ln(self)->CommandResult:
+    def ln(self, what='hand', initials:str='me', how='numbered')->CommandResult:
         """Alias for 'list hand me numbered'
         """
-        return self.list(how="numbered")
+        return self.list(what, initials, how)
     
     def show(self, what="discard")->CommandResult:
         """Displays the top card of the discard pile OR story elements
@@ -308,10 +319,13 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.show(what)
         
-    def read(self, numbered:bool=True, initials:str=None)->CommandResult:
+    def read(self, numbered:bool=False, initials:str=None)->CommandResult:
         """Display a player's story in a readable format.
         """
         return self._gameEngineCommands.read(numbered, initials)
+    
+    def rn(self, initials:str=None)->CommandResult:
+        return self.read(True, initials)
 
     def status(self, initials:str=None)->CommandResult:
         return self._gameEngineCommands.status(initials)

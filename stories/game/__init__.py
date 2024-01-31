@@ -7,6 +7,7 @@ from .__version__ import __copyright__
 __all__ = [
     'cardDeck',
     'commandResult',
+    'environment',
     'gameConstants',
     'storiesGameEngine',
     'gameEngineCommands',
@@ -25,6 +26,7 @@ __all__ = [
 from .storiesObject import StoriesObject
 from .gameConstants import GameConstants, GameParametersType, GenreFilenames
 from .gameConstants import GenreType, CardType, ActionType
+from .environment import Environment
 
 from .storyCard import StoryCard
 from .cardDeck import CardDeck

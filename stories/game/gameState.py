@@ -31,7 +31,6 @@ class GameState(StoriesObject):
                 game_start - the datetime when the game started (when this object was created)
 
         """
-        self._number_of_players = 0
         self._players:List[Player] = []
         self._current_player_number = -1
         self._current_player = None
@@ -56,13 +55,8 @@ class GameState(StoriesObject):
     def game_id(self, value):
         self._game_id = value
         
-    @property
     def number_of_players(self):
-        return self._number_of_players
-    
-    @number_of_players.setter
-    def number_of_players(self, value):
-        self._number_of_players = value
+        return len(self._players)
 
     @property
     def players(self) -> List[Player]:
@@ -184,7 +178,7 @@ class GameState(StoriesObject):
             the number of turns is incremented.
         
         """
-        npn = self._get_next_player_number()
+        npn = self.get_next_player_number()
         self.current_player_number = npn
         self.current_player = self.players[self.current_player_number]
         self.current_player.can_roll = True
@@ -197,20 +191,19 @@ class GameState(StoriesObject):
         self.turns += 1
         self.turn_number += 1
         
-    def _get_next_player_number(self):
+    def get_next_player_number(self):
         p = self.current_player_number + 1
-        if p >= self.number_of_players:
+        if p >= self.number_of_players():
             return 0
         else:
             return p
     
     def add_player(self, aplayer:Player):
-        """Add a Player to the game and increments the number_of_players.
+        """Add a Player to the game
         
         """
-        aplayer.number = self.number_of_players     # starts at 0
+        aplayer.number = self.number_of_players()     # starts at 0
         self._players.append(aplayer)
-        self._number_of_players += 1
     
     def get_player_by_initials(self, initials):
         player = None
@@ -226,7 +219,7 @@ class GameState(StoriesObject):
     
     def to_dict(self) -> dict:
         gs = {"game_id" : self._game_id, "game_parameters_type" : self.game_parameters_type.value, \
-              "number_of_players" : self.number_of_players, "current_player_number" : self.current_player_number }
+              "number_of_players" : self.number_of_players(), "current_player_number" : self.current_player_number }
         gs["turns"] = self.turns
         gs["turn_number"] = self.turn_number
 

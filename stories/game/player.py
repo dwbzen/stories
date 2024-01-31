@@ -189,7 +189,17 @@ class Player(StoriesObject):
         
         return card_played
         
-    
+    def remove_card(self, card_number:int)->StoryCard:
+        """Remove a single StoryCard from the player's hand
+            Arguments:
+                card_number - the number of the card in the player's hand to remove
+            Returns:
+                The StoryCard removed or None if a card with the given number doesn't exist in the player's hand.
+        """
+        assert(card_number >=0)
+        story_card = self.story_card_hand.remove_card(card_number)
+        return story_card
+        
     def get_card(self, card_number:int)->StoryCard|None:
         story_card = self.story_card_hand.get_card(card_number)
         return story_card

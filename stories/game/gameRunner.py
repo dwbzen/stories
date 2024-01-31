@@ -113,7 +113,7 @@ class GameRunner(object):
         """
         game_over = False
         game_state = self._stories_game.game_state
-        nplayers = game_state.number_of_players
+        nplayers = game_state.number_of_players()
         while not game_over:
             for i in range(nplayers):
                 # 

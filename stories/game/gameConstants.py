@@ -59,8 +59,9 @@ class GameConstants(object):
     Define global constants
     '''
     COMMANDS = ['add', 'deal', 'discard', 'done', 'draw', 'end', 
-            'game_status', 'help', 'info', 'list', 'list_numbered', 'ln', 'log_message', 'ls', 'next', 'play', 
-            'read', 'save', 'set', 'show', 'start', 'status', 'who']
+            'game_status', 'help', 'info', 'list', 'list_numbered', 'ln',
+            'log_message', 'ls', 'next', 'pass_card', 'play', 
+            'read', 'rn', 'save', 'set', 'show', 'start', 'status', 'who']
     
     CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files
      

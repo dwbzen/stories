@@ -15,12 +15,11 @@ class StoryCardHand(StoriesObject):
     Represents the story element cards in a player's hand
     '''
 
-
     def __init__(self):
         '''
         Constructor
         '''
-        self._cards:StoryCardList = StoryCardList()
+        self._cards:StoryCardList = StoryCardList()     # the cards in my hand
         self._discards:StoryCardList = StoryCardList()
         self._my_story_cards:StoryCardList = StoryCardList()
     

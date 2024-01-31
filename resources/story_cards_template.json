@@ -20,12 +20,12 @@
 		},
 		{
 			"card_type" : "Opening/Story",
-			"maximum_count" : 40,
+			"maximum_count" : 20,
 			"Help" : "Story lines that can also be used as Opening lines."
 		},
 		{
 			"card_type" : "Story",
-			"maximum_count" : 100,
+			"maximum_count" : 90,
 			"Help" : "Story body lines."
 		},
 		{
@@ -35,7 +35,7 @@
 		},
 		{
 			"card_type" : "Action",
-			"maximum_count" : 40,
+			"maximum_count" : 25,
 			"Help" : "Player actions."
 		}
 	],
@@ -55,7 +55,7 @@
 			"text" : "Draw New",
 			"min_arguments" : 1,
 			"max_arguments" : 4,
-			"quantity" :6
+			"quantity" : 6
 		},
 		{
 			"action_type" : "trade_lines",
