@@ -233,25 +233,35 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.add(what, player_name, initials, player_id, email)
 
-    def start(self) -> CommandResult:
-        message = f'Starting game {self.game_id}'
+    def start(self, what:str="game") -> CommandResult:
+        if what == "game":
+            message = f'Starting game {self.game_id}, round 1'
+        else:    # "round"
+            message = f'Starting round {1 + self._game_state.round}'
 
         self.log_info(message)
         self._game_state.set_next_player()    # sets the player number to 0 and the curent_player Player reference
         self._game_state.started = True
-        self._stories_game.start_game()       # sets the start datetime
+        self._stories_game.start(what)       # sets the start datetime
                 
         return CommandResult(CommandResult.SUCCESS, message, True)
     
-    def end(self) ->CommandResult:
+    def end(self, what:str="round") ->CommandResult:
         """Ends the game, saves the current state if specified, and exits.
+            Arguments:
+                what - "round" ends the current story round for all players and tallies up points.
+                       The winner(s) of the round get 5 points, the player(s) who come in second
+                       are awarded 3 points, third place player(s) get 1 point. Everyone else gets 0.
+                       
+                       "game" ends the current round, tallies the points and then finds a winner.
         """
-        self.log_info("Ending game: " + self.game_id)
-        self._stories_game.end_game()
-        result = CommandResult(CommandResult.TERMINATE, "Game is complete" , True)
+        self.log_info(f"Ending {what}: " + self.game_id)
+        self._stories_game.end(what)    # sets durations in minutes
         #
-        # TODO - determine the winner, save the game if specified
+        # determine the winner, save the game if specified
         #
+        result = self._gameEngineCommands.end(what)
+
         return result
     
     def done(self)-> CommandResult:

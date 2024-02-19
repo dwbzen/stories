@@ -33,7 +33,6 @@ class StoriesGame(StoriesObject):
         self._env = Environment.get_environment()
         self._resource_folder = self._env.get_resource_folder()     # base resource folder
         self._game_parameters_type = GameParametersType[game_parameters_type.upper()]      # can be "test", "prod", or "custom"
-        self._env = Environment.get_environment()
         self._resource_folder = self._env.get_resource_folder()     # base resource folder for example, "/Compile/stories/resources"
         #
         # load game parameters
@@ -54,6 +53,7 @@ class StoriesGame(StoriesObject):
         #
         self._game_state = GameState(self._game_id, total_points, self._game_parameters_type)
         self.game_duration = 0
+        self.round_durations:List[int] = []
 
               
     def _load_game_configuration(self):
@@ -153,13 +153,23 @@ class StoriesGame(StoriesObject):
         player.story_card_hand.add_cards(cards)
         player.game_id = self._game_id
         
-    def start_game(self) ->bool:
+    def start(self, what:str="game") ->bool:
         """
         Starts the game
         """
+        self._start_datetime = datetime.today()
         return True
         
-    def end_game(self)->int:
+    def end(self, what:str="round")->int:
+        """
+            Arguments:
+                what - "round" ends the current story round for all players and tallies up points.
+                       The winner(s) of the round get 5 points, the player(s) who come in second
+                       are awarded 3 points, third place player(s) get 1 point. Everyone else gets 0.
+                       
+                       "game" ends the current round, tallies the points and then finds a winner.
+                TODO - tally points & sort players by points using "round_points" game parameter
+        """
         self.game_duration = self.game_state.get_elapsed_time()
         return self.game_duration
     

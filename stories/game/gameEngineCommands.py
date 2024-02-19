@@ -151,9 +151,10 @@ class GameEngineCommands(object):
         """
         current_player = self.game_state.current_player
         omit_types = []
-        if current_player.number == self.game_state.number_of_players - 1:
+        bypass_error_checks = self.stories_game.game_parameters.bypass_error_checks
+        if current_player.number == self.game_state.number_of_players() - 1:    # If I am the last player
             omit_types = self._check_types_to_omit()
-        result = current_player.end_turn()
+        result = current_player.end_turn(bypass_error_checks)
         if result.return_code is CommandResult.SUCCESS:
             npn = self.game_state.set_next_player()
             next_player = self.game_state.current_player
@@ -169,6 +170,62 @@ class GameEngineCommands(object):
             # from the current_player's (the player whose turn is done) hand and replace with new cards
             #
             msg = self._update_player_hand(current_player, omit_types)
+        return result
+    
+    def end(self, what:str) ->CommandResult:
+        """Ends the round or game, saves the current state and exits.
+            Arguments:
+                what - "round" to end the current story round, "game" to end the entire game.
+                    Ending the game ends the current round and tallies the points for the round,
+                    determine a winner or winners, then ends the game.
+            Returns:
+                CommandResult - for what == "round", the winner's initials is returned in the result properties dict
+                    as in {"winner" : "my_initials"}.
+                    For what == "game", if the current round is successfully ended, the return_code is set to CommandResult.TERMINATE
+                    Otherwise CommandResult.ERROR is returned and the message has the specifics.
+            Note that error checking is bypassed if the bypass_error_flags property (determined by
+            the parameters file) is True.
+        """
+
+        game_points = self.stories_game.game_parameters.game_points
+        story_length = self.stories_game.game_parameters.story_length
+        bypass_error_checks = self.stories_game.game_parameters.bypass_error_checks
+        return_code = CommandResult.SUCCESS
+        message = ""
+        winner:Player = None
+        
+        #
+        # Try to end the current round first, then if what is "game" also end the entire game.
+        # In both cases points are tallied and winner(s) are determined.
+        # is ending the round valid? check the number of story cards for each player
+        #
+        # TODO - score round points based on who came in first, second & third.
+        #
+        for player in self.game_state.players:
+            story_elements_played = player.story_elements_played    # Dict[CardType,int]
+            points = story_elements_played[CardType.STORY]   # 1 point for every story card
+            points += (story_elements_played[CardType.STORY] - story_length)   # bonus/penalty points for every card over/under the minimum
+            player.points = points
+            pm = json.dumps(story_elements_played, cls=CardTypeEncoder)
+            if winner is None or winner.points > player.points:
+                winner = player
+            if bypass_error_checks or \
+                (story_elements_played[CardType.TITLE] == 1 and \
+                 story_elements_played[CardType.OPENING] == 1 and \
+                 story_elements_played[CardType.CLOSING] == 1):
+                #
+                # looks good!
+                message = f"{message} Player: {player.player_initials} played cards: {pm}\n "
+            else:    # something missing
+                message = f"{message} Player: {player.player_initials} has not played necessary cards: {pm}\n "
+                return_code = CommandResult.ERROR
+                    
+        if return_code is CommandResult.SUCCESS:
+            message = f"The {what} is over and the winner with {winner.points} is {winner.player_initials}"
+            if what == "game":
+                return_code = CommandResult.TERMINATE
+
+        result = CommandResult(return_code, message, True)
         return result
     
     def _check_types_to_omit(self)->List[CardType]:
@@ -275,14 +332,15 @@ class GameEngineCommands(object):
                 
         return result
     
-    def pass_card(self, card_number:int)->CommandResult:
-        """Pass a card in the current player's hand to the hand of the next player (to the left).
+    def pass_card(self, card_number:int,  initials:str="me")->CommandResult:
+        """Pass a card in the designated player's hand to the hand of the next player (to the left).
             Arguments:
                 card_number - the number of the card to pass. It must exist in the current player's hand
+                initials - the initials of the player doing the passing. Defaults to 'me' indicating the current player.
             This command does nothing in a solo game.
         """
-        npn = self._game_state.get_next_player_number()
-        player = self.game_state.current_player
+        player = self.game_state.current_player if initials=="me" else self.get_player(initials)
+        npn = self._game_state.get_next_player_number(player)
         if player.number == npn:    # nothing to do
             return CommandResult(CommandResult.SUCCESS, "No other players to pass to!", True)
             
@@ -293,7 +351,7 @@ class GameEngineCommands(object):
             
         next_player:Player = self.game_state.players[npn]
         next_player.add_card(story_card)
-        return CommandResult(CommandResult.SUCCESS, f"Card #{card_number} removed from your hand and given to {next_player.player_initials}")
+        return CommandResult(CommandResult.SUCCESS, f"Card #{card_number} removed from {player.player_initials}'s hand and given to {next_player.player_initials}")
 
     def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
         """List the cards held by the current player
@@ -472,11 +530,14 @@ class GameEngineCommands(object):
                     
             case ActionType.STIR_POT:
                 # Each player selects a story element from their deck and passes it to the person to their left
+                # if the randomize_picks game parameter is set to True, the selection is done at random automatically
+                # otherwise each player must run a pass_card <card_number> command.
+                #
                 message = f"{action_card.number}. {action_card.action_type.value} not yet implemented but soon."
                     
             case ActionType.CHANGE_NAME:
                 # Change the character name on a selected story card to a different alias or pronoun
-                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."    
+                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
         
         result = CommandResult(return_code, message, done_flag)
         return result

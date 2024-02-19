@@ -18,7 +18,8 @@ class CommandResult(StoriesObject):
     NEED_PLAYER_CHOICE = 4  # successful, but need player choice as to what to do next
     
 
-    def __init__(self, return_code:int, message:str=None, done_flag:bool=True, next_action:str=None, exception:Exception=None, choices:List[str]=None):
+    def __init__(self, return_code:int, message:str=None, done_flag:bool=True, next_action:str=None, exception:Exception=None, \
+                 json_message:str=None, properties:dict=None):
         """Constructor, baby.
             Arguments:
                 return_code - integer return code:
@@ -27,24 +28,21 @@ class CommandResult(StoriesObject):
                     TERMINATE = 2  terminate the game
                     EXECUTE_NEXT = 3  success, and execute the next_action for the current player
                 message - a message string to be displayed to the player. Can be blank or None, default value is None
-                jsonMessage - a JSON formatted message for the server
                 done_flag - if  True, this player's turn is completed, False otherwise. Default value is True
                 next_action - next action to perform for this player, default is None. 
                         This should be in the format of an executable command
-
                 exception - the Exception instance if the command raised an exception, default is None
+                json_message - optional JSON formatted message for the server
+                properties - optional dict having additional return info for use by the client
                 
-            jsonMessage has the format: { "userMessage: <message>", "jsonText" : <JSON> }
-            where <message> is the user message and jsonText is specific to the result.
-            jsonMessage will always include "userMessage". 
         """
         self._return_code = return_code
         self._message = message
-        self._json_message = f'{{"userMessage":{message}}}'
+        self._json_message = json_message
         self._done_flag = done_flag
         self._exception = exception
         self._next_action = next_action
-        self._choices = choices
+        self._properties = properties
     
     @property
     def return_code(self):
@@ -87,6 +85,14 @@ class CommandResult(StoriesObject):
         self._next_action = value
         
     @property
+    def properties(self)->dict:
+        return self._properties
+    
+    @properties.setter
+    def properties(self, value:dict):
+        self._properties = value
+        
+    @property
     def json_message(self):
         return self._json_message
     
@@ -94,27 +100,13 @@ class CommandResult(StoriesObject):
     def json_message(self, value):
         self._json_message = value
         
-    def set_json_message_text(self, text, key="jsonText"):
-        """Sets the jsonText portion of json_message.
-            Use key="userMessage" to set the userMessage
-        """
-        d = dict(self.json_message)
-        d[key] = text
-        self._json_message = json.dumps(d)
-        
-    @property
-    def choices(self) -> List[str]:
-        return self._choices
-    
-    @choices.setter
-    def choices(self, value:List[str]):
-        self._choices = value
-        
     def is_successful(self):
         return True if self.return_code == CommandResult.SUCCESS else False
     
     def to_dict(self):
-        d = {"return_code" : self.return_code, "done_flag" : self.done_flag, "message" : self.message, "json_message":self.json_message }
+        d = {"return_code" : self.return_code, "done_flag" : self.done_flag, "message" : self.message }
+        if self.json_message is not None:
+            d["json_message"] = self.json_message
         if self.next_action is not None:
             d["next_action"] = self.next_action
         if self.exception is not None:

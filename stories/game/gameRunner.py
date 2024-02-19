@@ -145,8 +145,8 @@ class GameRunner(object):
 def main():
     parser = argparse.ArgumentParser(description="Run a command-driven Stories Game for 1 to 6 players")
     parser.add_argument("--nplayers", "-n", help="The number of players", type=int, choices=range(1,6), default=3)
-    parser.add_argument("--names", help="Comma-separated list of player names. If set, this determines #of players and overrides --players")
-    parser.add_argument("--points", help="Total game points", type=int, choices=range(10, 100), default=20)
+    parser.add_argument("--names", help="Comma-separated list of player names. If set, this determines #of players and overrides default players")
+    parser.add_argument("--points", help="Total game points. This overrides gameParameters settings", type=int, choices=range(10, 100), default=20)
     parser.add_argument("--params", help="Game parameters type: 'test', 'prod', or 'custom' ", type=str, \
                         choices=["test","prod","custom"], default="test")
     parser.add_argument("--gameid", help="Game ID", type=str, default=None)
@@ -186,7 +186,7 @@ def main():
         game_runner.execute_command(f"add player {player_name} {player_id} {initials} {email}")
         # 
         
-    game_runner.execute_command("start", current_player)
+    game_runner.execute_command("start game", current_player)
     game_runner.run_game()
 
 if __name__ == '__main__':

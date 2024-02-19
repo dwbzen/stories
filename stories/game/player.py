@@ -6,12 +6,10 @@ Created on Dec 8, 2023
 
 from game.storiesObject import StoriesObject
 from game.gameConstants import CardType
-from game.gameUtils import GameUtils
 from game.storyCardHand import StoryCardHand
 from game.storyCard import StoryCard
 from game.commandResult import CommandResult
 
-from datetime import datetime
 from typing import Dict, List
 import json
 
@@ -29,7 +27,7 @@ class Player(StoriesObject):
         self._game_id = game_id
         self._number = number       # my player number, values 0 to #players-1
         self._my_game = None        # will be a StoriesGame reference
-        self._points = 0
+        self._points = 0            # talied at the end of the game
         self._story_card_hand = StoryCardHand()       # this player's story cards in his/her hand and the cards already played
         self._command_history:List[str] = []          # a list of commands executed by a player
         self._num_cards_played = 0      # on this players turn, determines the #cards to discard
@@ -96,7 +94,7 @@ class Player(StoriesObject):
 
     @property
     def my_game(self):
-        """Returns CareersGame reference
+        """Returns StoriesGame reference
         """
         return self._my_game
     
@@ -214,13 +212,15 @@ class Player(StoriesObject):
             
         return card_discarded
         
-    def end_turn(self)->CommandResult:
+    def end_turn(self, bypass_error_checks:bool)->CommandResult:
         """Cleanup and check for errors after my turn
+            Arguments:
+                bypass_error_checks - if True, bypass any error checking.
         """
         return_code = CommandResult.SUCCESS
         done_flag = False
-        if self.card_drawn:
-            if self.num_cards_played == 0 and self.num_cards_discarded == 0:
+        if self.card_drawn or bypass_error_checks:
+            if self.num_cards_played == 0 and self.num_cards_discarded == 0 and not bypass_error_checks:
                 return_code = CommandResult.ERROR
                 message = "You must play at least 1 card or discard 1 card"
             else:

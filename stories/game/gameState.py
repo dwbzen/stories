@@ -46,6 +46,7 @@ class GameState(StoriesObject):
         self._started = False
         self._game_id = game_id
         self._types_to_omit:List[CardType] = []    # CardTypes to omit when drawing. 
+        self._round = 0    # the current round number
     
     @property
     def game_id(self):
@@ -147,6 +148,14 @@ class GameState(StoriesObject):
         self._end_datetime = value
         
     @property
+    def round(self)->int:
+        return self._round
+    
+    @round.setter
+    def round(self, value:int):
+        self._round = value
+        
+    @property
     def types_to_omit(self)->List[CardType]:
         """CardTypes to omit when drawing a new card.
             This list will either be empty, have 1 element or 2 elements.
@@ -191,12 +200,16 @@ class GameState(StoriesObject):
         self.turns += 1
         self.turn_number += 1
         
-    def get_next_player_number(self):
-        p = self.current_player_number + 1
-        if p >= self.number_of_players():
-            return 0
+    def get_next_player_number(self, aplayer:Player=None):
+        """Gets the next player's number relative to the current player, or a designated player.
+            Arguments:
+                aplayer - the Player instance to use, defaults to the current player if not specified.
+        """  
+        if aplayer is None:
+            npn = 0 if self.current_player is None else (1 + self.current_player.number)
         else:
-            return p
+            npn = aplayer.number + 1
+        return 0 if npn >= self.number_of_players() else npn
     
     def add_player(self, aplayer:Player):
         """Add a Player to the game

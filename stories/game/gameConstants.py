@@ -27,7 +27,7 @@ class CardType(Enum):
 
 class CardTypeEncoder(json.JSONEncoder):
     def encode(self, obj):
-        print("CLS")
+        # print("CLS")
         if isinstance(obj, dict):
             message = [""]
             for k in obj.keys():
