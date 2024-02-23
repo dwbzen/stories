@@ -125,7 +125,7 @@ class StoriesGame(StoriesObject):
     def story_discard_deck(self)->deque:
         return self._story_discard_deck
     
-    def get_discardx(self)->StoryCard|None:
+    def peek_discard(self)->StoryCard|None:
         """Peeks at the top card if there is one, else None
         """
         return self._story_discard_deck[-1] if len(self._story_discard_deck) > 0 else None
