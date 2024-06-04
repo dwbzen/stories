@@ -94,14 +94,15 @@ class StoryCardHand(StoriesObject):
                 
             The selected card is removed from the player's hand (self.cards)
             and appended to their story (self.my_story_cards)
-            This leaves a deficit in the player's hand so a new card must be
+            If this leaves a deficit in the player's hand a new card must be
             drawn from the game card deck OR selected from the common discard pile.
         """
         ind = self._cards.index_of(card_number)
         card = None
         if ind >= 0:
             card = self._cards.get(ind)
-            self._my_story_cards.add_card(card)
+            if card.story_element:
+                self._my_story_cards.add_card(card)
             self._cards.remove(ind)
         return card
     

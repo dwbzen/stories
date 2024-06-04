@@ -7,10 +7,23 @@
 		"meanwhile", "trade_lines", "steal_lines", "stir_pot", "change_name"
 	],
 	"characters" : [ "Michael", "Nick", "Samantha", "Vivian" ],
+	"commands" : [ "discard", "draw", "done", "end", "help", "info", "list", "ln", "ls", "next", "pass", "play", "rank", "read", "rn", "show", "status" ],
+	"command_details" : [
+		{
+			"name" : "discard",
+			"arguments" : "card number",
+			"description" : "discard the selected card and place it on top of the game discard pile"
+		},
+		{
+			"name" : "draw",
+			"arguments" : "'new' or 'discard'",
+			"description" : "draw a new card or the top card of the discard deck"
+		}
+	],
 	"card_types" : [
 		{
 			"card_type" : "Title",
-			"maximum_count" : 25,
+			"maximum_count" : 30,
 			"Help" : "The title of a story"
 		},
 		{
@@ -35,7 +48,7 @@
 		},
 		{
 			"card_type" : "Action",
-			"maximum_count" : 25,
+			"maximum_count" : 20,
 			"Help" : "Player actions."
 		}
 	],
@@ -55,6 +68,7 @@
 			"text" : "Draw New",
 			"min_arguments" : 1,
 			"max_arguments" : 4,
+			"story_element" : 0,
 			"quantity" : 6
 		},
 		{
@@ -63,6 +77,7 @@
 			"text" : "Trade Line",
 			"min_arguments" : 1,
 			"max_arguments" : 1,
+			"story_element" : 0,
 			"quantity" : 4
 		},
 		{
@@ -71,6 +86,7 @@
 			"text" : "Steal Line",
 			"min_arguments" : 1,
 			"max_arguments" : 1,
+			"story_element" : 0,
 			"quantity" : 4
 		},
 		{
@@ -79,15 +95,17 @@
 			"text" : "Stir the Pot",
 			"min_arguments" : 0,
 			"max_arguments" : 0,
+			"story_element" : 0,
 			"quantity" : 4
 		},
 		{
 			"action_type" : "change_name",
-			"Help" : "Change the character name on a selected story card to a different alias or pronoun.",
+			"Help" : "Change up to 2 character names on a selected story card to a different alias or pronoun.",
 			"text" : "Change character name",
-			"min_arguments" : 1,
-			"max_arguments" : 1,
-			"quantity" : 6
+			"min_arguments" : 2,
+			"max_arguments" : 3,
+			"story_element" : 0,
+			"quantity" : 30
 		}
 	],
 	"cards" : {

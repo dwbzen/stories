@@ -192,13 +192,15 @@ class CardDeck(StoriesObject):
         deck["card_types"] = template["card_types"]
         deck["action_types"] = template["action_types"]
         deck["characters"] = template["characters"]
+        
         self._card_types = deck["card_types"]
         self._card_type_counts = {}
         for c in self._card_types:    # dict
             card_type = c["card_type"]
             max_count = c["maximum_count"]
             self._card_type_counts[card_type] = max_count
-            
+        self._commands = template["commands"]
+        self._command_details = template["command_details"]
         return deck
     
     def load_cards(self, deck:dict, resource_folder, genre:GenreType)->int:
@@ -211,39 +213,35 @@ class CardDeck(StoriesObject):
             Also sets the values of _deck, _deck_cards, _card_types
             if character_aliases is not an empty dictionary, character names
             in each line is replaced by its alias.
+            The "card_types" element in story_card_temlate.json gives the number of cards to load for each card_type.
+            This number is <= the number of lines in the file.
+            The entire file is shuffled first so that the selection is unique for each game.
+            @see stories.game.GameUtils
         """
         filenames = GameConstants.get_genre_filenames(genre)   # Dict with CardType as the key and the card text file as the value
         total_count = 0
         number = 0
+        lines = []
         for card_type in filenames.keys():
             filepath = f"{resource_folder}/genres/{genre.value}/{filenames[card_type]}"
             count = 0
             max_count = self._card_type_counts[card_type.value]
-            with open(filepath) as fp:
-                lines =  fp.readlines()
+            print(filepath)
+            lines = self.read_story_file(filepath, shuffle=True)
+            #
+            # create a random list max_count long so every game is unique
+            #
+            for line in lines:
                 #
-                # create a random list max_count long so every game is different
+                # create a StoryCard instance for this card type
                 #
-                nlines = len(lines)
-                line_indexes = GameUtils.shuffle(nlines)
-                for ind in range(nlines):
-                    line = lines[line_indexes[ind]]
-                    if len(line) == 0 or line.startswith("--"):    # skip blank and comment lines
-                        continue
-                    #
-                    # replace character names with aliases
-                    #
-                    #line = CardDeck.replace_names(line, self._character_aliases)
-                    #
-                    # create a StoryCard instance for this card type
-                    #
-                    storyCard = StoryCard(genre, card_type, line, number)
-                    self._deck_cards.append(storyCard)
-                    number+=1
-                    count+=1
-                    if count >= max_count:
-                        break
-                fp.close()
+                storyCard = StoryCard(genre, card_type, line, number)
+                self._deck_cards.append(storyCard)
+                number+=1
+                count+=1
+                if count >= max_count:
+                    break
+                
             self._card_type_counts[card_type.value] = count
             total_count += count
         #
@@ -290,6 +288,42 @@ class CardDeck(StoriesObject):
             if story_card.card_type.value.startswith(card_type):
                 cards.append(story_card.text)
         return cards
+    
+    def read_story_file(self, filepath, shuffle=False)->List[str]:
+        with open(filepath) as fp:
+            lines = []
+            continue_line = False
+            cline = ""
+            for line in fp:
+                line = line.lstrip().rstrip()    # delete left padding and trailing \n
+                if line=="" or line.startswith("--"):    # skip comment lines
+                    continue
+                if line.endswith('\\'):    # continues on next line
+                    line = line.removesuffix('\\')
+                    if continue_line:
+                        cline = f"{cline}\n{line}"
+                    else:
+                        continue_line = True
+                        cline = line
+                else:
+                    if continue_line:
+                        cline = f"{cline}\n{line}\n"
+                        lines.append(cline)
+                        continue_line = False
+                    else:
+                        lines.append(f"{line}\n")
+        fp.close()
+        if shuffle:
+            lines = GameUtils.shuffle_list(lines)
+        return lines
+    
+    @property
+    def commands(self)->List[str]:
+        return self._commands
+    
+    @property
+    def command_details(self)->List[dict]:
+        return self._command_details
     
     def to_dict(self):
         cards = [x.to_dict() for x in self.deck_cards]

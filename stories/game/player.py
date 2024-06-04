@@ -27,7 +27,7 @@ class Player(StoriesObject):
         self._game_id = game_id
         self._number = number       # my player number, values 0 to #players-1
         self._my_game = None        # will be a StoriesGame reference
-        self._points = 0            # talied at the end of the game
+        self._points = 0            # talied at the end of each round
         self._story_card_hand = StoryCardHand()       # this player's story cards in his/her hand and the cards already played
         self._command_history:List[str] = []          # a list of commands executed by a player
         self._num_cards_played = 0      # on this players turn, determines the #cards to discard
@@ -153,7 +153,7 @@ class Player(StoriesObject):
     def play_card(self, card:int|StoryCard)->StoryCard|None:
         """Plays a single card from the player's hand.
             This assumes the card with the given number is a story element (Title, Opening, Opening/Story, or Closing)
-            and or an ActionCard where the story_element property is True (such as a meanwhile ActionCard)
+            or an ActionCard where the story_element property is True (such as a meanwhile ActionCard)
             Arguments:
                 card - the number of the card being played OR a StoryCard instance. Cannot be None
             Returns:

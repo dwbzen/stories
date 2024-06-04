@@ -23,7 +23,18 @@ class GameUtils(object):
             Returns an empty List if size==0
         """
         return random.sample(list(range(0, size)), size) if size>0 else []
-    
+
+    @staticmethod
+    def shuffle_list(lines:List) -> List:
+        """Shuffle List elements
+        """
+        nlines = len(lines)
+        new_list = []
+        line_indexes = GameUtils.shuffle(nlines)
+        for ind in range(nlines):
+            new_list.append(lines[line_indexes[ind]])
+        return new_list
+       
     @staticmethod
     def roll(number_of_dice)->List[int]:
         return random.choices(population=[1,2,3,4,5,6],k=number_of_dice)
@@ -48,21 +59,25 @@ class GameUtils(object):
         return '{0:d}{1:02d}{2:02d}_{3:02d}{4:02d}{5:02d}'.format(now.year, now.month, now.day, now.hour, now.minute, now.second)
     
     @staticmethod
-    def time_since(base_date:datetime=datetime(2000, 1, 1, 0, 0),  end_date=None, what='seconds') -> int:
+    def time_since(base_date:datetime=datetime(2000, 1, 1, 0, 0),  end_date=None, what='seconds', decimals=0) -> int:
         """Gets the number of seconds or days that has passed since a given base date/datetime
             Arguments:
                 base_date : the base date, default is 12:00 AM 2000-01-01
-                what : 'seconds' or 'days'
+                what : 'seconds', 'days', or 'years'
             Returns:
                 The seconds or days since the base date to now, truncated to an integer
         """
         end_date = datetime.now() if end_date is None else end_date
         delta = end_date-base_date
         if what=='seconds':
-            return math.trunc(delta.total_seconds())
+            return delta.total_seconds()
+        elif what == 'years':
+            if decimals==0:
+                return delta.days // 365
+            else:
+                return round(delta.days / 365, decimals)
         else:   # assume days
             return delta.days
-    
     
     @staticmethod
     def create_guid(installation_id="") ->str:

@@ -159,7 +159,7 @@ class StoryCardList(StoriesObject):
             card_text_list = []
             n = 0
             for card in self._cards:
-                if card.card_type is CardType.TITLE or card.card_type is CardType.CLOSING or not numbered:
+                if not numbered:    #card.card_type is CardType.TITLE or card.card_type is CardType.CLOSING or
                     txt = card.text
                 else:
                     txt = f"{n}. {card.text}"

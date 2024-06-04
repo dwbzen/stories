@@ -29,14 +29,15 @@ class StoriesGameEngine(object):
     Default arguments are shown first followed by alternatives separated by | to indicate "or"
     Valid commands defined in GameConstants
     
-    Command :: <done> | <draw> | <discard> | <list> | <play> | <read>
+    Command :: <draw> | <list> | <ls> | <ln> | <done> | <end> | <pass> | <play> | <discard> | <read> |<rn> |
+               <show> | <help> | <info> | <next>
         <draw> :: "draw"  ("new"|"discard")     ; draw a card from the main deck or the top card in the discard pile
         <list> :: "list" ("hand"|"story")  [player_initials] [<how>] 
             <how> :: "regular" | "numbered"
         <ls> :: "ls" ("hand"|"story")  [player_initials]     ; short for regular list
         <ln> :: "ln" ("hand"|"story")  [player_initials]     ; short for numbered list
         <done> :: "done" | "next"               ; done with my turn - next player's turn
-        <end game> :: "end game"                ; saves the current game state then ends the game
+        <end>  :: "end game"                    ; saves the current game state then ends the game
         <pass> :: "pass" <card_number>          ; pass the designated card in a player's hand to the player on his/her left (the next player)
         <play> :: "play" <card_number[,card_number]>          ; play 1 story card, or comma-separated list consisting of a multi-card action card, and a story card.
         <discard> :: "discard" <card_number>    ; discard the selected card and place it on top of the game discard pile
@@ -44,7 +45,8 @@ class StoriesGameEngine(object):
                                                   if the optional "numbered" argument is included.
         <rn> ::                                 ; alias for "read numbered"
         <show> :: "show"                        ; show the top card in the discard pile
-        
+        <help> :: "help commands" | "help <command_name>"   ; get a list of all commands with a brief summary of each, or details on a given command
+        <info> :: "info"   ; info about the game currently in progress
         <card_number> :: <integer> 
               
     Play sequence:
@@ -250,10 +252,11 @@ class StoriesGameEngine(object):
         """Ends the game, saves the current state if specified, and exits.
             Arguments:
                 what - "round" ends the current story round for all players and tallies up points.
+                       The "rank" command is used to rank completed stories:
                        The winner(s) of the round get 5 points, the player(s) who come in second
                        are awarded 3 points, third place player(s) get 1 point. Everyone else gets 0.
                        
-                       "game" ends the current round, tallies the points and then finds a winner.
+                       "game" ends the game, tallies the points and then finds a winner.
         """
         self.log_info(f"Ending {what}: " + self.game_id)
         self._stories_game.end(what)    # sets durations in minutes
@@ -284,10 +287,10 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.discard(card_number)
     
-    def play(self, card_number:int, cards:str=None) ->CommandResult:
+    def play(self, card_number:int, *args) ->CommandResult:
         """Play 1 or 2 cards: 1 story card, or 1 multi-card action card and a story card
         """
-        return self._gameEngineCommands.play(card_number, cards)
+        return self._gameEngineCommands.play(card_number, *args)
     
     def pass_card(self, card_number:int)->CommandResult:
         """Pass a card in the current player's hand to the hand of the next player (to the left).
@@ -340,5 +343,37 @@ class StoriesGameEngine(object):
     def status(self, initials:str=None)->CommandResult:
         return self._gameEngineCommands.status(initials)
     
-
+    def rank(self, initials:str)->CommandResult:
+        """Rank completed stories.
+            At the conclusion of a round each player ranks the completed stories.
+            Arguments:
+                initials - comma-separated player initials in rank order: best to worse
+            Scoring is based on rank: 5 points for the first, 3 for the second, 1 for the third.
+            Unranked stories receive 0 points.
+        """
+        pass
+    
+    def help(self, command_name:str=None) ->CommandResult:
+        """Display valid commands or details on a specific command
+        """
+        if command_name is None:
+            cmds = self.stories_game.story_card_deck.commands
+            message = f"Valid commands: {cmds}"
+            result = CommandResult(CommandResult.SUCCESS, message)
+        else:    # help for a specific command
+            message = None
+            for detail in self.stories_game.story_card_deck.command_details:
+                if detail["name"] == command_name:
+                    message = f"{command_name}: {detail['arguments']}\n{detail['description']}"
+                    break
+            message = f"Help not available for {command_name}" if message is None else message
+            result = CommandResult(CommandResult.SUCCESS, message)
+        return result
+    
+    def info(self)->CommandResult:
+        """Provide information on the game currently in progress.
+        """
+        pass
+    
+    
         

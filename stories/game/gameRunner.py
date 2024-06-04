@@ -1,7 +1,7 @@
 '''
 Created on Dec 8, 2023
 
-@author: dwbze
+@author: don_bacon
 '''
 
 from game.storiesGame import StoriesGame
