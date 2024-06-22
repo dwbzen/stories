@@ -19,9 +19,9 @@ class StoryCardHand(StoriesObject):
         '''
         Constructor
         '''
-        self._cards:StoryCardList = StoryCardList()     # the cards in my hand
+        self._cards:StoryCardList = StoryCardList()             # the cards in my hand
         self._discards:StoryCardList = StoryCardList()
-        self._my_story_cards:StoryCardList = StoryCardList()
+        self._my_story_cards:StoryCardList = StoryCardList()    # the cards in the player's current story
     
     @property
     def cards(self) ->StoryCardList:
@@ -85,10 +85,11 @@ class StoryCardHand(StoriesObject):
         """
         return self._cards.card_type_counts()
     
-    def play_card(self, card_number:int)->StoryCard|None:
+    def play_card(self, card_number:int, insert_after_line:int=None)->StoryCard|None:
         """Plays a selected StoryCard.
             Arguments:
-                card_number - the number of the card to play.
+                card_number - the number of the card to play
+                insert_after_line - a line# in the player's current story or None
             Returns:
                 the StoryCard instance selected or None if a card with that number doesn't exist
                 
@@ -96,14 +97,32 @@ class StoryCardHand(StoriesObject):
             and appended to their story (self.my_story_cards)
             If this leaves a deficit in the player's hand a new card must be
             drawn from the game card deck OR selected from the common discard pile.
+            If the card's CardType is a TITLE, OPENING, or CLOSING, this will replace
+            an existing story card if one exists.
         """
         ind = self._cards.index_of(card_number)
-        card = None
+        card:StoryCard = None
+        type_ind = -1
         if ind >= 0:
-            card = self._cards.get(ind)
-            if card.story_element:
-                self._my_story_cards.add_card(card)
-            self._cards.remove(ind)
+            card = self._cards.get(ind)    # card in my hand
+            if insert_after_line is not None:
+                #
+                # insert this card after the insert_after_line
+                #
+                self._my_story_cards.insert_card(insert_after_line+1, card)
+            else:
+                if card.card_type is CardType.TITLE or card.card_type is CardType.OPENING or card.card_type is CardType.CLOSING:
+                    type_ind = self._my_story_cards.find_first(card.card_type)
+                    if type_ind >= 0:
+                        # replace the new card in the story
+                        current_card:StoryCard  = self._my_story_cards[type_ind]
+                        self._my_story_cards.cards[type_ind] = card
+                        self.discards.add_card(current_card)
+                        self.remove_card(current_card.number)
+                        return card
+                if card.story_element:
+                    self._my_story_cards.add_card(card)
+                self._cards.remove(ind)
         return card
     
     def get_card(self, card_number:str|int)->StoryCard|None:

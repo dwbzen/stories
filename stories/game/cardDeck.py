@@ -4,6 +4,7 @@ Created on Dec 9, 2023
 @author: don_bacon
 '''
 import json
+import copy
 from game.storiesObject import StoriesObject
 from game.storyCard import StoryCard
 from game.gameUtils import GameUtils
@@ -46,12 +47,18 @@ class CardDeck(StoriesObject):
 
         self._cards_index = GameUtils.shuffle(self.size())    # returns an empty list if size==0
         self._next_index = 0
+        self._next_card_number = self._ncards
     
         
-    def shuffle(self):
+    def shuffle(self) -> List[int]:
+        """ Returns a random sample of the integers from 0 to size-1, where size is the #cards in the deck
+            @see GameUtils.shuffle()
+        """
         self._cards_index = GameUtils.shuffle(self._size)
         
-    def size(self):
+    def size(self)->int:
+        """Returns the number of StoryCards in the main deck (deck_cards)
+        """
         return len(self._deck_cards)
     
     @property
@@ -85,6 +92,14 @@ class CardDeck(StoriesObject):
     @property
     def card_types(self) -> List[Dict]:
         return self._card_types
+
+    @property
+    def card_types_list(self)->List[str]:
+        return self._card_types_list
+    
+    @property
+    def action_types(self)->List[str]:
+        return self.deck["action_types_list"]
     
     @property
     def deck_cards(self)->List[StoryCard]:
@@ -125,21 +140,62 @@ class CardDeck(StoriesObject):
                 omit_type - if not None, this will omit drawing a story card of that type.
                     For example, if all players have played a Title, we don't want
                     to draw a card of that type. Same with Opening.
-        
+            Returns:
+                the next StoryCard.
+            Inactive StoryCards are skipped. When the last card is drawn,
+            the indexes are re-shuffled and the next_index is reset to 0.
         """
         next_card = None
         while next_card is None:
             if self.next_index < self.size():    # draw the next card
                 nxt = self._cards_index[self.next_index]
                 next_card = self._deck_cards[nxt]
+                
                 self.next_index = self.next_index + 1
-                if omit_type is not None and next_card.card_type is omit_type:
+                if (not next_card.active) or ( omit_type is not None and next_card.card_type is omit_type):
                     next_card = None
             else:
                 self.next_index = 0
                 self.shuffle()
         return next_card
     
+    def draw_type(self, card_type:CardType, action_type:ActionType|None) -> StoryCard:
+        """Draw a card of a specific type and ActionType if CardType is ACTION.
+            This function is intended for testing game play only.
+            Arguments:
+                card_type - the CardType to draw
+                action_type - if type_to_draw is CardType.ACTION, this is the ACTION_TYPE to draw
+            Returns:
+                The specified StoryCard from the deck, or None if there are no remaining
+                cards of this type_to_draw/action_type
+            Notes This function does NOT change the value of next_index.
+            Also it does not check if the drawn card is not active.
+        """
+        next_card = None
+        card = None
+        next_index = self.next_index
+        next_ind = self._cards_index[next_index]   # start looking through the deck at the next index
+        while next_ind < self.size():
+            card = self._deck_cards[next_ind]
+            if action_type is not None:
+                if card.card_type is CardType.ACTION:
+                    if card.action_type is action_type:
+                        next_card = card
+                        break
+                    else:
+                        next_index += 1
+                        next_ind = self._cards_index[next_index]
+            elif card.card_type is card_type:
+                next_card = card
+                break
+
+            next_index += 1
+            next_ind = self._cards_index[next_index]
+                
+        if next_card is not None:    # remove from the deck by deactivating so it won't be drawn
+            next_card.active = False
+        return next_card
+
     def draw_new(self, types_to_omit:List[CardType]=None)->StoryCard:
         """Draw a card from the story card main deck, skipping the optional list of CardType to omit.
             Arguments:
@@ -147,11 +203,13 @@ class CardDeck(StoriesObject):
                     For example, if all players have played a Title, we don't want
                     to draw a card of that type. Same with Opening.
         """
-        next_card = None
+        next_card:StoryCard = None
         while next_card is None:
             if self.next_index < self.size():    # draw the next card
                 nxt = self._cards_index[self.next_index]
                 next_card = self._deck_cards[nxt]
+                if not next_card.active:    # skip it if not active
+                    continue
                 self.next_index = self.next_index + 1
                 if next_card.card_type in types_to_omit:
                     # keep on drawing until we get a card whose card_type is not one to omit
@@ -187,7 +245,15 @@ class CardDeck(StoriesObject):
             template = json.loads(jtxt)    # returns a Dict
         fp.close()
         deck = { "Help" : f"{genre.value} story card deck"}
-        deck["card_types_list"] = template["card_types_list"]
+        deck["card_types_list"] = template["card_types_list"]   # "Title", "Opening", "Opening/Story", "Story", "Closing"
+        self._card_types_list = []
+        #
+        # convert the card types to lower case for use in commands
+        # "title", "opening", "opening/story", "story", "closing", "action"
+        #
+        for ct in deck["card_types_list"]:
+            self._card_types_list.append(ct.lower())
+            
         deck["action_types_list"] = template["action_types_list"]
         deck["card_types"] = template["card_types"]
         deck["action_types"] = template["action_types"]
@@ -289,6 +355,20 @@ class CardDeck(StoriesObject):
                 cards.append(story_card.text)
         return cards
     
+    def _find_card_index(self, card_type:CardType, action_type:ActionType)->int:
+        card = None
+        for ind in range(self.size()):   # story_card in self._deck_cards:
+            story_card = self.deck_cards[ind]
+            if story_card.card_type is card_type:
+                if action_type is None or story_card.action_type is action_type:
+                    card = story_card
+                    break
+                else:
+                    continue
+        if card is None:    # remove from the deck by deactivating so it won't be drawn
+            ind = -1
+        return ind
+    
     def read_story_file(self, filepath, shuffle=False)->List[str]:
         with open(filepath) as fp:
             lines = []
@@ -324,6 +404,14 @@ class CardDeck(StoriesObject):
     @property
     def command_details(self)->List[dict]:
         return self._command_details
+    
+    @property
+    def next_card_number(self)->int:
+        return self._next_card_number
+    
+    @next_card_number.setter
+    def next_card_number(self, num):
+        self._next_card_number = num
     
     def to_dict(self):
         cards = [x.to_dict() for x in self.deck_cards]

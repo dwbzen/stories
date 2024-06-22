@@ -150,19 +150,25 @@ class Player(StoriesObject):
         """
         self._command_history.append(command)
         
-    def play_card(self, card:int|StoryCard)->StoryCard|None:
+    def play_card(self, card:int|StoryCard, insert_after_line:int=None)->StoryCard|None:
         """Plays a single card from the player's hand.
             This assumes the card with the given number is a story element (Title, Opening, Opening/Story, or Closing)
             or an ActionCard where the story_element property is True (such as a meanwhile ActionCard)
             Arguments:
                 card - the number of the card being played OR a StoryCard instance. Cannot be None
+                insert_after_line - a line# in the player's current story or None
             Returns:
                 The StoryCard if it exists, otherwise None.
             This functional also updates counts of the type of story element played.
+            If insert_after_line is given, play the card after this line number in the current story instead of adding to the end.
+            
+            Otherwise the story card text is added to the end of the story for card types of OPENING_STORY and STORY
+            For TITLE, OPENING and CLOSING if there is an existing story card of that type
+            in the player's story, it is replaced with the new one, otherwise it's added to the end.
         """
         assert(card is not None)
         card_number = card.number if isinstance(card, StoryCard) else card
-        card_played = self.story_card_hand.play_card(card_number)
+        card_played = self.story_card_hand.play_card(card_number, insert_after_line)
         
         if card_played is None:
             pass    # error handled by calling function
@@ -212,31 +218,31 @@ class Player(StoriesObject):
             
         return card_discarded
         
-    def end_turn(self, bypass_error_checks:bool)->CommandResult:
+    def end_turn(self, check_errors:bool)->CommandResult:
         """Cleanup and check for errors after my turn
             Arguments:
-                bypass_error_checks - if True, bypass any error checking.
+                check_errors - if True, check for errors: too many cards in hand, not drawn a card
         """
         return_code = CommandResult.SUCCESS
         done_flag = False
-        if self.card_drawn or bypass_error_checks:
-            if self.num_cards_played == 0 and self.num_cards_discarded == 0 and not bypass_error_checks:
-                return_code = CommandResult.ERROR
-                message = "You must play at least 1 card or discard 1 card"
-            else:
-                done_flag = True
-                message = "Turn Complete"
-                self.num_cards_played = 0
-                self.num_cards_discarded = 0
-                self.card_drawn = False
-        else:   # you must draw a card
-            message = "You must draw a card and then either play or discard a card."
-            return_code = CommandResult.ERROR
+        message = ""
+        if check_errors:
+            if not self.card_drawn:     # players must draw a card during their turn
+                message = f"{message}You must draw a card and then either play or discard a card."
             
+            if self.num_cards_played == 0 and self.num_cards_discarded == 0:
+                return_code = CommandResult.ERROR
+                message = f"{message} You must play at least 1 card or discard 1 card."
+        else:
+            done_flag = True
+            self.num_cards_played = 0
+            self.num_cards_discarded = 0
+            self.card_drawn = False
+
         return CommandResult(return_code, message, done_flag)
         
     def info(self):
-        return  f' "name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}"'
+        return  f' "name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}", "id":"{self.player_id}"'
 
     def to_dict(self):
         pdict = {"name" : self.player_name, "number" : self.number, "initials" : self.player_initials}

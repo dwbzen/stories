@@ -7,7 +7,7 @@ Created on Dec 20, 2023
 import unittest
 from game.cardDeck import CardDeck
 from game.storyCardHand import StoryCardHand
-from game.gameConstants import GenreType, CardType
+from game.gameConstants import GenreType, CardType, ActionType
 
 class CardDeckTest(unittest.TestCase):
     '''
@@ -19,7 +19,7 @@ class CardDeckTest(unittest.TestCase):
         unittest.TestCase.setUp(self)
         resource_folder = "/Users/dwbze/OneDrive/Documents/Compile/stories/resources"
         self.card_deck = CardDeck(resource_folder, GenreType.HORROR)
-        print(f"#cards: {self.card_deck.size}")
+        print(f"#cards: {self.card_deck.size()}")
         print(self.card_deck.card_type_counts)
         self.story_card_hand = StoryCardHand()
         self.deal_size = 10     # number of cards to deal
@@ -34,20 +34,33 @@ class CardDeckTest(unittest.TestCase):
         # nothing to tear down
 
     def test_count_card_types(self):
-        print("\ntest_count_card_types")
+        print("\ntest_count_card_types ===================")
         counts = self.story_card_hand.card_type_counts()
         print(counts)
     
     def test_discards(self):
-        print("\ntest_discards")
+        print("\ntest_discards ===========================")
         # remove Title cards
         ncards = self.story_card_hand.discard_cards(CardType.TITLE)
         print(f"{ncards} Title cards removed")
         counts = self.story_card_hand.card_type_counts()
         print(counts) 
         
-    def test_draw(self):
-        print("\ntest_draw - omit Title cards")
+    def test_list_cards(self):
+        #
+        # tests the StoryCardList iterator
+        #
+        print("\ntest_list_cards ==========================")
+        for card in self.story_card_hand.cards:
+            card_type = card.card_type.value
+            text = card.text
+            print(f"{card.number}. {card_type}\n{text}")
+        itr = self.story_card_hand.cards.__iter__()
+        print(type(itr))
+        print("Test Complete")
+        
+    def test_draw_omit_title(self):
+        print("\ntest_draw_omit_title ====================")
         ncards = self.story_card_hand.discard_cards(CardType.TITLE)
         counts = self.story_card_hand.card_type_counts()
         print(f"{ncards} Title cards removed")
@@ -65,10 +78,24 @@ class CardDeckTest(unittest.TestCase):
         counts = self.story_card_hand.card_type_counts()
         self.assertEqual(counts["Title"], 0)
         print(f"  {counts}")
+    
+    def test_draw_type(self):
+        #
+        # draw a specific CardType and ActionType
+        #
+        print("\ntest_draw_type ==========================")
+        action_type = None
+        for card_type in list(CardType):
+            story_card = self.card_deck.draw_type(card_type, action_type)
+            self.assertTrue(story_card.card_type is card_type)
+        card_type = CardType.ACTION
+        for action_type in list(ActionType):
+            story_card = self.card_deck.draw_type(card_type, action_type)
+            self.assertTrue(story_card.action_type is action_type)
         
     @unittest.skip("test_player_draw")
     def test_player_draw(self):
-        print("interactive draw cards")
+        print("interactive test_player_draw ==============")
         for i in range(self.deal_size):
             story_card = self.card_deck.draw()
             card_type = story_card.card_type.value

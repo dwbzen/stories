@@ -1,13 +1,13 @@
 {
 	"Help" : "Template story card deck.",
 	"card_types_list" : [
-		"Title", "Opening", "Opening/Story", "Story", "Closing"
+		"Title", "Opening", "Opening/Story", "Story", "Closing", "Action"
 	],
 	"action_types_list" : [
-		"meanwhile", "trade_lines", "steal_lines", "stir_pot", "change_name"
+		"meanwhile", "draw_new", "trade_lines", "steal_lines", "stir_pot", "change_name", "reorder_lines", "compose"
 	],
 	"characters" : [ "Michael", "Nick", "Samantha", "Vivian" ],
-	"commands" : [ "discard", "draw", "done", "end", "help", "info", "list", "ln", "ls", "next", "pass", "play", "rank", "read", "rn", "show", "status" ],
+	"commands" : [ "add", "discard", "draw", "done", "end", "help", "info", "insert", "list", "ln", "ls", "next", "pass", "play", "rank", "read", "replace", "rn", "show", "status", "swap" ],
 	"command_details" : [
 		{
 			"name" : "discard",
@@ -16,7 +16,7 @@
 		},
 		{
 			"name" : "draw",
-			"arguments" : "'new' or 'discard'",
+			"arguments" : "'new', 'discard', <card_type> or 'action' <action_type>",
 			"description" : "draw a new card or the top card of the discard deck"
 		}
 	],
@@ -48,7 +48,7 @@
 		},
 		{
 			"card_type" : "Action",
-			"maximum_count" : 20,
+			"maximum_count" : 25,
 			"Help" : "Player actions."
 		}
 	],
@@ -56,42 +56,47 @@
 		{
 			"action_type" : "meanwhile",
 			"Help" : "Play a 'meanwhile' in front of a story element that just doesn't make sense in the place or time of the narrative.",
+			"example" : "play 100 234   Play action card #100 adding 'Meanwhile' in front of story card# 234, adding both to your story.",
 			"text" : "Meanwhile",
 			"min_arguments" : 1,
 			"max_arguments" : 1,
 			"story_element" : 1,
-			"quantity" : 10
+			"quantity" : 8
 		},
 		{
 			"action_type" : "draw_new",
 			"Help" : "Discard up to 4 cards and draw replacements.",
+			"example" : "N/A",
 			"text" : "Draw New",
 			"min_arguments" : 1,
 			"max_arguments" : 4,
 			"story_element" : 0,
-			"quantity" : 6
+			"quantity" : 4
 		},
 		{
 			"action_type" : "trade_lines",
 			"Help" : "Trade an Opening or Story element that has been played with that from another player's story.",
+			"example" : "N/A",
 			"text" : "Trade Line",
-			"min_arguments" : 1,
-			"max_arguments" : 1,
+			"min_arguments" : 2,
+			"max_arguments" : 2,
 			"story_element" : 0,
 			"quantity" : 4
 		},
 		{
 			"action_type" : "steal_lines",
 			"Help" : "A player steals a story card from a story played by another player.",
+			"example" : "N/A",
 			"text" : "Steal Line",
-			"min_arguments" : 1,
-			"max_arguments" : 1,
+			"min_arguments" : 2,
+			"max_arguments" : 2,
 			"story_element" : 0,
 			"quantity" : 4
 		},
 		{
 			"action_type" : "stir_pot",
 			"Help" : "Each player selects a card from their hand and passes it to the person to their left.",
+			"example" : "N/A",
 			"text" : "Stir the Pot",
 			"min_arguments" : 0,
 			"max_arguments" : 0,
@@ -101,62 +106,88 @@
 		{
 			"action_type" : "change_name",
 			"Help" : "Change up to 2 character names on a selected story card to a different alias or pronoun.",
+			"example" : "play 105 3 Nick/Michael   Play action card #105 changing the name 'Nick' to 'Michael' in story line# 3",
 			"text" : "Change character name",
 			"min_arguments" : 2,
 			"max_arguments" : 3,
 			"story_element" : 0,
-			"quantity" : 30
+			"quantity" : 6
+		},
+		{
+			"action_type" : "reorder_lines",
+			"Help" : "Change the order of lines in your story.",
+			"example" : "play 106 2,3,4 4,2,3   Play action card #106 changing the order of lines 2,3,4 to 4,2,3",
+			"text" : "Reorder story lines",
+			"min_arguments" : 2,
+			"max_arguments" : 3,
+			"story_element" : 0,
+			"quantity" : 6
+		},
+		{
+			"action_type" : "compose",
+			"Help" : "Add a bespoke line, written by you, to your story.",
+			"example" : "play 107 'She new it was a mistake!' Play action card #106 adding a new line to the story.",
+			"text" : "Compose a new story line",
+			"min_arguments" : 2,
+			"max_arguments" : 99,
+			"story_element" : 0,
+			"quantity" : 4
 		}
 	],
 	"cards" : {
-		"Help" : "Samples only. Cards are loaded from genre text files",
+		"Help" : "Examples lines for illustration only. Game cards are loaded from genre text files",
 		"Title" : [
 			{
 				"number" : 0,
-				"genre" : "Horror",
+				"genre" : "horror",
 				"card_type" : "Title",
 				"text" : "Haunting Refrains of the Damned"
 			},
 			{
 				"number" : 1,
-				"genre" : "Horror",
+				"genre" : "noir",
 				"card_type" : "Title",
-				"text" : "Heartbeat of the Hellish Drum"
+				"text" : "The Tangled Web"
 			}
 		],
 		"Opening" : [
 			{
 				"number" : 0,
-				"genre" : "Horror",
+				"genre" : "horror",
 				"card_type" : "Opening",
 				"text" : "The old house on the hill had been abandoned for decades, but something inside still whispered in the darkness."
 			},
 			{
 				"number" : 1,
-				"genre" : "Horror",
+				"genre" : "noir",
 				"card_type" : "Opening",
-				"text" : "The forest was quiet, except for the sound of footsteps that seemed to follow Samantha wherever she went."
+				"text" : "The air was thick with cigarette smoke and desperation - a familiar scent in this part of town."
 			}
 		],
 		"Opening/Story" : [
 			{
 				"number" : 0,
-				"genre" : "Horror",
+				"genre" : "horror",
 				"card_type" : "Opening/Story",
 				"text" : "The old house on the hill had been abandoned for decades, but something inside still whispered in the darkness."
 			},
 			{
 				"number" : 1,
-				"genre" : "Horror",
+				"genre" : "noir",
 				"card_type" : "Opening/Story",
-				"text" : "The forest was quiet, except for the sound of footsteps that seemed to follow Samantha wherever she went."
+				"text" : "In the heart of the city, four paths converged as alliances shifted and secrets unraveled, the night promised intrigue and danger."
 			}
 		],
 		"Story" : [
 		
 		],
 		"Closing" : [
-		
+				{
+				"number" : 0,
+				"genre" : "noir",
+				"card_type" : "Closing",
+				"text" : "The city was asleep. The joints were closed. The rats and hoods and killers were in their holes."
+			}
 		]
 	}
 }

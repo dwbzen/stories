@@ -7,7 +7,7 @@ from game.commandResult import CommandResult
 from game.storiesObject import StoriesObject
 from game.player import Player
 from game.environment import Environment
-from game.gameConstants import GameConstants, GameParametersType, GenreType, CardType
+from game.gameConstants import GameConstants, GameParametersType, GenreType, CardType, ActionType
 from game.gameParameters import GameParameters
 from game.cardDeck import CardDeck
 from game.storyCard import StoryCard
@@ -97,6 +97,15 @@ class StoriesGame(StoriesObject):
     def game_parameters(self) -> GameParameters:
         return self._game_parameters
     
+    def bypass_error_checks(self)->bool:
+        return self.game_parameters.bypass_error_checks
+    
+    def check_errors(self)->bool:
+        """A convenience method that returns True if checking for errors,
+            usually after a player's turn, False otherwise.
+        """
+        return not self.game_parameters.bypass_error_checks
+    
     @property
     def game_state(self):
         return self._game_state
@@ -173,15 +182,20 @@ class StoriesGame(StoriesObject):
         self.game_duration = self.game_state.get_elapsed_time()
         return self.game_duration
     
-    def draw_card(self, what:str, types_to_omit:List[CardType]) ->tuple :
+    def draw_card(self, what:str, action_type:ActionType|None) ->tuple :
         """Draw a card from the deck OR from the top of the global discard deck
-            Arguments:
-                what - 'new' : draw a card from the main deck. 'discard' : draw the top card from the game discard deck
-                types_to_omit : optional List[CardTypes] to omit (not draw)
+                what - what to draw or where to draw from:
+                       "new" - draw a card from the main card deck
+                       "discard" - draw the top of the global discard deck
+                       <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
+                action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
+                        "stir_pot", "draw_new", "change_name"
             Returns:
                 A Tuple(StoryCard, str). If StoryCard is None, the str returned is an error message
                  for example if drawing from an empty discard deck
+            Note uses game_state.types_to_omit, a List[CardTypes] to omit (not draw)
         """
+        types_to_omit = self.game_state.types_to_omit    # possibly empty List[CardType]
         card = None
         message = None
         if what.lower() == 'new':
@@ -191,9 +205,17 @@ class StoriesGame(StoriesObject):
             # draw the top card from the right side of the discard deque
             #
             card = self.pop_discard()
+        elif what in self.story_card_deck.card_types_list:    # "title", "opening", "opening/story", "story", "closing", "action"
+            #
+            # draw the next occurrence of this CardType
+            #
+            card_type:CardType = CardType[what.upper()]
+            card = self.story_card_deck.draw_type(card_type, action_type)
         else:
-            message = "No discards to draw from"    # card is None
+            message = f"{what} is an invalid draw option"
         
+        if card is None:
+            message = f"No cards available for '{what}'"    # card is None
         return card, message
         
     def get_discard(self)->tuple():

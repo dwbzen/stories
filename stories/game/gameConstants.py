@@ -53,14 +53,18 @@ class ActionType(Enum):
     STIR_POT = "stir_pot"
     DRAW_NEW = "draw_new"
     CHANGE_NAME = "change_name"
+    REORDER_LINES = "reorder_lines"
+    COMPOSE = "compose"
 
 class GameConstants(object):
     '''
     Define global constants
     '''
-    COMMANDS = ['add', 'deal', 'discard', 'done', 'draw', 'end', 
-            'game_status', 'help', 'info', 'list', 'list_numbered', 'ln',
-            'log_message', 'ls', 'next', 'play', 'rank', 'read', 'rn',
+    COMMANDS = [
+            'add', 'deal', 'discard', 'done', 'draw', 'end', 
+            'game_status', 'help', 'info', 'insert', 
+            'list', 'list_numbered', 'ln', 'log_message', 'ls', 
+            'next', 'play', 'rank', 'read', 'rn', 'replace',
             'save', 'set', 'show', 'start', 'status' ]
     
     CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files

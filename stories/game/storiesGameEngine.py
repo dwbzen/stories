@@ -60,14 +60,14 @@ class StoriesGameEngine(object):
     def __init__(self, stories_game:StoriesGame=None, game_id:str=None, loglevel='warning', installationId=""):
         """
         """
-        self._stories_game = stories_game    # create a new StoriesGame with create()
+        self._stories_game:StoriesGame = stories_game    # create a new StoriesGame with create()
         self._debug = False                  # traces the action by describing each step and logs to a file
         self._start_date_time = datetime.now()
         self._installationId = installationId      # provided by the UI or the GameRunner
-        self._current_player = None
-        self._admin_player = Player(number=-1, name='Administrator', player_id="admin00", initials='admin')
+        self._current_player:Player = None
+        self._admin_player:Player = Player(number=-1, name='Administrator', player_id="admin00", initials='admin')
         
-        self._game_state = None             # set with create()
+        self._game_state:GameState = None   # set with create()
         self._automatic_run = False         # set to True if running a script
         self._game_id = self._create_game_id(installationId) if game_id is None else game_id
         
@@ -275,12 +275,30 @@ class StoriesGameEngine(object):
     def next(self) -> CommandResult:
         """Synonym for done - go to the next player
         """
-        return self.done()
+        return self._gameEngineCommands.done()
     
-    def draw(self, what:str="new") ->CommandResult:
-        """Draw a card from the deck OR from the top of the global discard deck
+    def draw(self, what:str="new", action_type_value:str=None) ->CommandResult:
+        """Draw a card from the deck, or from the top of the global discard deck, or a specific card type
+            Arguments:
+                what - what to draw or where to draw from:
+                       new - draw a card from the main card deck
+                       discard - draw the top of the global discard deck
+                       <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
+                action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
+                        "stir_pot", "draw_new", "change_name"
         """
-        return self._gameEngineCommands.draw(what)
+        action_type = None
+        if action_type_value is not None:
+            if action_type_value in self.stories_game.story_card_deck.action_types:
+                action_type:ActionType = ActionType[action_type_value.upper()]
+                result = self._gameEngineCommands.draw(what, action_type)
+            else:
+                message = f"No cards available for '{action_type_value}'"
+                result = CommandResult(CommandResult.ERROR, message)
+        else:
+            result = self._gameEngineCommands.draw(what, action_type)
+            
+        return result
     
     def discard(self, card_number:int):
         """Discard cards as indicated by their card_number from a player's hand.
@@ -291,6 +309,16 @@ class StoriesGameEngine(object):
         """Play 1 or 2 cards: 1 story card, or 1 multi-card action card and a story card
         """
         return self._gameEngineCommands.play(card_number, *args)
+    
+    def insert(self, card_number:int, line_number:int )->CommandResult:
+        """Insert a story card into your current story.
+        """
+        return self._gameEngineCommands.insert(line_number, card_number)
+    
+    def replace(self, line_number:int, card_number:int )->CommandResult:
+        """Replace a card in your current story with one in your hand.
+        """
+        return self._gameEngineCommands.replace(line_number, card_number)
     
     def pass_card(self, card_number:int)->CommandResult:
         """Pass a card in the current player's hand to the hand of the next player (to the left).
@@ -370,10 +398,9 @@ class StoriesGameEngine(object):
             result = CommandResult(CommandResult.SUCCESS, message)
         return result
     
-    def info(self)->CommandResult:
+    def info(self, initials:str=None)->CommandResult:
         """Provide information on the game currently in progress.
+           Get player information
         """
-        pass
-    
-    
+        return self._gameEngineCommands.info(initials)
         

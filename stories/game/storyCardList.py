@@ -9,19 +9,28 @@ from game.storiesObject import StoriesObject
 from game.gameConstants import CardType
 from typing import List, Dict
 import json
+from collections.abc import Iterator
 
 class StoryCardList(StoriesObject):
     '''
     Encapsulates a List[StoryCard]
     '''
 
-
     def __init__(self):
         '''
         Constructor
         '''
         self._cards = []    # empty List for now, cards added with add_cards()
-        
+    
+    def __iter__(self)->Iterator:
+        it = iter(self._cards)
+        return it
+    
+    def __getitem__(self, index)->StoryCard|None:
+        return self.get(index)
+    
+    def __len__(self)->int:
+        return len(self._cards)
     
     @property
     def cards(self)->List[StoryCard]:
@@ -36,6 +45,18 @@ class StoryCardList(StoriesObject):
     
     def add_card(self, card:StoryCard):
         self._cards.append(card)
+    
+    def insert_card(self, line_number:int, story_card:StoryCard):
+        """Insert a card after a given line number.
+        """
+        if line_number >= self.size():
+            self.add_card(story_card)
+        else:
+            #
+            # create a new List[StoryCard] with the given card
+            # after the card at the given line number.
+            # 
+            self._cards.insert(line_number, story_card)
         
     def discard_cards(self, card_type:CardType|str)->int:
         """Removes all the cards of a given type
