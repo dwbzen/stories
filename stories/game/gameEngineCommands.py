@@ -568,8 +568,8 @@ class GameEngineCommands(object):
                 draw_new:  play 250 100 119 143   ; card #250 is the draw_new ActionCard, the cards to replace with new ones are 110,119,143
                 
                 trade_lines:  play 251 BRI  1 2        ; card #251 is the trade_lines Action Card, 
-                                                         1 is the line 1 story card in my story, 
-                                                         2 is the line 2 story card in an opponent's (BRI) story (so visible to all)
+                                                         1 is the line 1 story card in an opponent's (BRI) story (so visible to all) 
+                                                         2 is the line 2 story card in my story
 
                 steal_lines:  play 252 Brian 4    ; card #252 is a steal_lines ActionCard. Steal line#4 from Brian's  story and place it in my hand
                 
@@ -659,6 +659,28 @@ class GameEngineCommands(object):
             
             case ActionType.TRADE_LINES:
                 # Trade an Opening or Story element that has been played with that from another player's story
+                target_player_name = args[0]    # name or initials work
+                target_line_number = int(args[1])      # a line# in an opponents story
+                my_line_number = int(args[2])          # a line# in my story
+                target_player:Player = self.get_player(target_player_name)
+                if target_player is None:
+                    message = f"No such player: {target_player_name}"
+                    return self._log_error(message)
+                target_story_cards = target_player.story_card_hand.my_story_cards
+                if target_line_number >= target_story_cards.size():
+                    message = f"Invalid line number: {target_line_number}"
+                    return self._log_error(message)
+                target_story_card = target_story_cards.get(target_line_number)    # my opponent's StoryCard
+                my_story_cards = player.story_card_hand.my_story_cards
+                if my_line_number >= my_story_cards.size():
+                    message = f"Invalid line number: {my_line_number}"
+                    return self._log_error(message)
+                my_story_card = my_story_cards.get(my_line_number)
+                #
+                # swap the lines:
+                # put target_story_card in my story at line my_line_number
+                # an my_story_card in target_story_cards at target_line_number
+                #
                 message = f"{action_card.number}. {action_card.action_type.value} not available."
             
             case ActionType.REORDER_LINES:
