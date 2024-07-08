@@ -14,6 +14,7 @@ from game.storyCardList import StoryCardList
 
 from typing import List
 import logging, json
+# from stories.game.storyCardHand import StoryCardHand
 
 
 class GameEngineCommands(object):
@@ -446,6 +447,8 @@ class GameEngineCommands(object):
                 initials - a player's initials, defaults to the current player "me"
                 how - 'numbered' for a numbered list, 'regular', the default, for no numbering
             Returns: CommandResult.message is the stringified list of str(card) in the player's hand or story
+            By default when what=="hand", the lines are sorted by CardType:
+             ACTION, TITLE, OPENING, OPENING_STORY, STORY, CLOSING, and number
             
         """
         # TODO
@@ -453,9 +456,9 @@ class GameEngineCommands(object):
         done_flag = True
         return_code = CommandResult.SUCCESS
         if what == 'hand':
-            message = str(player.story_card_hand.cards) if how=="regular" else self._list(player.story_card_hand.cards)
+            message = self._list(player.story_card_hand, how, sort_list=True)
         elif what == 'story':
-            message = str(player.story_card_hand.my_story_cards) if how=="regular" else self._list(player.story_card_hand.my_story_cards)
+            message = self._list(player.story_card_hand.my_story_cards, how)
         else:
             message = f"I don't understand {what}"
             done_flag = False
@@ -463,12 +466,21 @@ class GameEngineCommands(object):
         
         return CommandResult(return_code, message, done_flag)
     
-    def _list(self, cards:StoryCardList) ->str:
-        card_text = ""
-        n = 1
-        for card in cards.cards:
-            card_text = card_text + f"{n}. {str(card)}"
-            n += 1
+    def _list(self, story_card_hand, how:str, sort_list=False) ->str:
+        
+        if how=="numbered":
+            n = 1
+            if sort_list:
+                cards = story_card_hand.sort()    #StoryCardList
+            else:
+                cards = story_card_hand.cards.cards
+                
+            card_text = ""
+            for card in cards:
+                card_text = card_text + f"{n}. {str(card)}"
+                n += 1
+        else:
+            card_text = str(story_card_hand.cards)
             
         return card_text
     

@@ -20,7 +20,7 @@ class StoryCardList(StoriesObject):
         '''
         Constructor
         '''
-        self._cards = []    # empty List for now, cards added with add_cards()
+        self._cards:List[StoryCard] = []    # empty List for now, cards added with add_cards()
     
     def __iter__(self)->Iterator:
         it = iter(self._cards)

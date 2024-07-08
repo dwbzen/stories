@@ -68,6 +68,7 @@ class GameConstants(object):
             'save', 'set', 'show', 'start', 'status' ]
     
     CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files
+    CARD_TYPES = [CardType.ACTION, CardType.TITLE, CardType.OPENING, CardType.OPENING_STORY, CardType.STORY, CardType.CLOSING]
      
     def __init__(self, params:Dict={} ):
         '''

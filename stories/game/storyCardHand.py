@@ -35,6 +35,13 @@ class StoryCardHand(StoriesObject):
         """
         return self._my_story_cards
     
+    def sort(self)->StoryCardList:
+        """Sorts the cards (in a player's hand) by CardType and number
+        """
+        scards = self.cards.cards
+        scards_sorted = sorted(scards, key=lambda storyCard: storyCard.sort_key)
+        return scards_sorted
+    
     @property
     def discards(self)->StoryCardList:
         """Cards no longer needed are put here. This is a player's

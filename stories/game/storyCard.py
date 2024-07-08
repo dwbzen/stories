@@ -5,7 +5,7 @@ Created on Dec 9, 2023
 '''
 
 from game.storiesObject import StoriesObject
-from game.gameConstants import GenreType, CardType, ActionType
+from game.gameConstants import GenreType, CardType, ActionType, GameConstants
 import json
 
 class StoryCard(StoriesObject):
@@ -33,6 +33,11 @@ class StoryCard(StoriesObject):
         self._min_arguments = min_arguments
         self._max_arguments = max_arguments
         self._story_element = story_element
+        self._sort_key:int = 1000 * (GameConstants.CARD_TYPES.index(cardType) + 1) + number
+    
+    @property
+    def sort_key(self)->int:
+        return self._sort_key
         
     @property
     def genre(self)->GenreType:
