@@ -6,6 +6,7 @@ from .__version__ import __copyright__
 
 __all__ = [
     'cardDeck',
+    'chatManager',
     'commandResult',
     'environment',
     'gameConstants',
@@ -44,5 +45,5 @@ from .player import Player
 from .logger import Logger
 
 from .storiesGame import StoriesGame
-
+from .chatManager import ChatManager
 

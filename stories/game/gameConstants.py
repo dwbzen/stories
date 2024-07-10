@@ -45,6 +45,8 @@ class GenreFilenames(Enum):
     OPENING_STORY = "opening_storylines_"
     STORY = "storylines_"
     CLOSING = "closings_"
+    TRAINING_SYSTEM = "training_system_"
+    TRAINING_USER = "training_user_"
 
 class ActionType(Enum):
     MEANWHILE = "meanwhile"
@@ -55,6 +57,16 @@ class ActionType(Enum):
     CHANGE_NAME = "change_name"
     REORDER_LINES = "reorder_lines"
     COMPOSE = "compose"
+    
+class GameMode(Enum):
+    INDIVIDUAL = "individual"
+    TEAM = "team"
+    COLLABORATIVE = "collaborative"
+    
+class PlayerRole(Enum):
+    PLAYER = "player"
+    TEAM_LEAD = "team_lead"
+    DIRECTOR = "director"
 
 class GameConstants(object):
     '''

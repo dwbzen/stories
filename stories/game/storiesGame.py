@@ -7,7 +7,7 @@ from game.commandResult import CommandResult
 from game.storiesObject import StoriesObject
 from game.player import Player
 from game.environment import Environment
-from game.gameConstants import GameConstants, GameParametersType, GenreType, CardType, ActionType
+from game.gameConstants import GameConstants, GameParametersType, GenreType, CardType, ActionType, GameMode
 from game.gameParameters import GameParameters
 from game.cardDeck import CardDeck
 from game.storyCard import StoryCard
@@ -26,7 +26,7 @@ class StoriesGame(StoriesObject):
     """
 
 
-    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod"):
+    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod", game_mode:GameMode=GameMode.INDIVIDUAL):
         """
         """
         self._installation_id = installationId
@@ -38,6 +38,7 @@ class StoriesGame(StoriesObject):
         # load game parameters
         #
         self._load_game_configuration()
+        self._game_mode = game_mode    # individual, team, or collaborative GameMode
         
         self._genre = GenreType[genre.upper()]
         self._game_id = game_id
@@ -113,6 +114,14 @@ class StoriesGame(StoriesObject):
     @property
     def game_id(self):
         return self._game_id
+    
+    @property
+    def game_mode(self)->GameMode:
+        return self._game_mode
+    
+    @game_mode.setter
+    def game_mode(self, gamemode:GameMode):
+        self._game_mode = gamemode
     
     @property
     def installation_id(self):
