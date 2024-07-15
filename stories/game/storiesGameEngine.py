@@ -12,7 +12,7 @@ from game.environment import Environment
 from game.gameState import GameState
 from game.logger import Logger
 from game.gameUtils import GameUtils
-from game.gameConstants import GenreType, GameConstants, CardType, ActionType
+from game.gameConstants import GenreType, GameConstants, CardType, ActionType, PlayMode, PlayerRole
 from game.gameEngineCommands import GameEngineCommands
 
 from datetime import datetime
@@ -205,14 +205,15 @@ class StoriesGameEngine(object):
     def game_id(self)->str:
         return self._game_id
     
-    def create(self, installationId:str, genre:str, total_points:int, game_parameters_type="test") -> CommandResult:
+    def create(self, installationId:str, genre:str, total_points:int, play_mode:PlayMode, game_parameters_type="test") -> CommandResult:
         """Create a new StoriesGame for a given genre.
             Initialize GameEngineCommands
         """
         self._installationId = installationId
-        self._stories_game = StoriesGame(installationId, genre, total_points, self._game_id, game_parameters_type)
+        self._stories_game = StoriesGame(installationId, genre, total_points, self._game_id, game_parameters_type, play_mode)
         self._game_state = self._stories_game.game_state
         self._game_state.game_id = self._game_id
+        self._play_mode = play_mode
         
         # initialize GameEngineCommands
         self._gameEngineCommands = GameEngineCommands(self._stories_game)
@@ -229,7 +230,7 @@ class StoriesGameEngine(object):
     #
     #####################################
 
-    def add(self, what, player_name, initials=None, player_id=None, email=None) -> CommandResult:
+    def add(self, what, player_name, initials:str, player_id:str, email:str) -> CommandResult:
         """Add a new player to the Game. Other 'adds' TBD
     
         """
@@ -286,6 +287,7 @@ class StoriesGameEngine(object):
                        <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
                 action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
                         "stir_pot", "draw_new", "change_name"
+            Note that the following action_types are NOT VALID in COLLABORATIVE game play: "trade_lines" and "steal_lines"
         """
         action_type = None
         if action_type_value is not None:
@@ -392,7 +394,10 @@ class StoriesGameEngine(object):
             message = None
             for detail in self.stories_game.story_card_deck.command_details:
                 if detail["name"] == command_name:
-                    message = f"{command_name}: {detail['arguments']}\n{detail['description']}"
+                    description = ""
+                    for line in detail['description']:
+                        description = f"{description}\n{line}"
+                    message = f"{command_name}: {detail['arguments']}\n{description}"
                     break
             message = f"Help not available for {command_name}" if message is None else message
             result = CommandResult(CommandResult.SUCCESS, message)

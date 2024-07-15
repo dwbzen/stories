@@ -8,7 +8,7 @@ from datetime import datetime
 import json
 from game.player import Player
 from game.storiesObject import StoriesObject
-from game.gameConstants import GameParametersType, CardType
+from game.gameConstants import GameParametersType, CardType, PlayerRole
 from typing import List
 
 class GameState(StoriesObject):
@@ -211,12 +211,14 @@ class GameState(StoriesObject):
             npn = aplayer.number + 1
         return 0 if npn >= self.number_of_players() else npn
     
-    def add_player(self, aplayer:Player):
+    def add_player(self, aplayer:Player)->int:
         """Add a Player to the game
-        
+            Argument: aplayer - a Player reference
+            Returns: the player number added
         """
         aplayer.number = self.number_of_players()     # starts at 0
         self._players.append(aplayer)
+        return aplayer.number
     
     def get_player_by_initials(self, initials):
         player = None
@@ -225,6 +227,37 @@ class GameState(StoriesObject):
                 player = p
                 break
         return player
+    
+    def get_players_by_role(self, role:PlayerRole)->List[Player]:
+        """Get a list of Player by player_role.
+            Arguments:
+                role - A PlayerRole
+            Returns:
+                List[Player] who have that role.
+        """
+        players = [p for p in self.players if p.player_role is role]
+        return players
+    
+    def get_team_players_by_role(self, team_name:str, role:PlayerRole)->List[Player]:
+        """Get a list of Player in a given team by player_role.
+            Arguments:
+                team_name - the name of the team
+                role - A PlayerRole
+            Returns:
+                List[Player] who have that role in the given team
+        """
+        players = [p for p in self.players if p.player_role is role and p.team_name == team_name]
+        return players
+    
+    def get_all_team_members(self, team_name)->List[Player]:
+        """Get a list of Player in a given team by player_role.
+            Arguments:
+                team_name - the name of the team
+            Returns:
+                List[Player] in the given team. Could be an empty list if the team doesn't exist or has no members.
+        """
+        players = [p for p in self.players if p.team_name == team_name]
+        return players
 
     def to_JSON(self):
         gs = self.to_dict()

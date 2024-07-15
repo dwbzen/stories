@@ -10,3 +10,4 @@ portals.egg-info
 .vscode
 .pydevproject
 .project
+.env

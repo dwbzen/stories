@@ -21,7 +21,8 @@ __version__ = "0.0.1"
 __all__ = [
     # sub folders
     'game',
-    'test'
+    'test',
+    'server'
 ]
 
 # -----------------------------------------------------------------------------
@@ -30,3 +31,4 @@ __all__ = [
 # 
 import game
 import test
+import server

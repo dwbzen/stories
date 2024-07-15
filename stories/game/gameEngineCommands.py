@@ -4,7 +4,7 @@ Created on Dec 22, 2023
 @author: don_bacon
 '''
 
-from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder
+from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder, PlayMode, PlayerRole
 from game.storiesGame import StoriesGame
 from game.commandResult import CommandResult
 from game.gameState import GameState
@@ -32,6 +32,7 @@ class GameEngineCommands(object):
         self._game_state = self._stories_game.game_state
         self._debug = False
         self._game_id = stories_game.game_id
+        self._play_mode = self._stories_game.play_mode
     
     @property
     def stories_game(self)->StoriesGame:
@@ -127,8 +128,8 @@ class GameEngineCommands(object):
     #####################################
 
     def add(self, what, player_name, initials=None, player_id=None, email=None) -> CommandResult:
-        """Add a new player to the Game. Other 'adds' TBD
-    
+        """Add a new player or team to the Game.
+            Note - team semantics TBD
         """
         if what == 'player':
             player = Player(name=player_name, player_id=player_id, initials=initials, email=email, game_id=None)
@@ -136,6 +137,8 @@ class GameEngineCommands(object):
             message = player.to_JSON()
             self.log(message)
             result = CommandResult(CommandResult.SUCCESS, message=message)
+        elif what == 'team':
+            pass    # TODO
         else:
             message = f"Cannot add {what} here."
             result = CommandResult(CommandResult.ERROR, message=message, done_flag=False)
@@ -321,7 +324,7 @@ class GameEngineCommands(object):
             result = CommandResult(CommandResult.ERROR, message, False)
             
         else:
-            message = f"You are discarding {card_number}. {card_discarded.text}"
+            message = f"You are discarding card# {card_number}. {card_discarded.text}"
             self.stories_game.add_to_discard(card_discarded)
             result = CommandResult(CommandResult.SUCCESS, message, True)
         return result
@@ -340,27 +343,78 @@ class GameEngineCommands(object):
             The story card text is added to the end of the story for card types of "Opening/Story" and "Story"
             For "Title", "Opening" and "Closing" if there is an existing story card of that type
             in the player's story, it is replaced with the new one, otherwise it's added to the end.
+            
+            In a collaborative game all the players maintain their own hand,
+            but the player with the DIRECTOR PlayerRole maintains the common story.
         """
         player = self.game_state.current_player
         story_card = player.story_card_hand.get_card(card_number)
         if story_card is None:
-                message = f"Invalid card number {card_number}"
+                message = f"Invalid card number: {card_number}"
                 result = CommandResult(CommandResult.ERROR, message, False)
         
         elif story_card.card_type is CardType.ACTION:
             result = self.execute_action_card(player, story_card, args)
             
         else:
-            card_played = player.play_card(story_card)
-            if card_played is None:
-                message = f"Invalid card number {card_number}"
-                result = CommandResult(CommandResult.ERROR, message, False)
+            if self._play_mode is PlayMode.COLLABORATIVE:
+                #
+                # find the player with the DIRECTOR role (which could be the current player) and play the card as that player
+                #
+                result = self._get_director()
+                if result.is_successful():
+                    director:Player = result.properties["director"]
+                    player.remove_card(card_number)
+                    director.add_card(story_card)
+                    result = self._play_card(director, story_card)
+                    
+            elif self._play_mode is PlayMode.TEAM:
+                pass    # TODO
             else:
-                message = f"You played {card_played.number}. {card_played.text}"
-                result = CommandResult(CommandResult.SUCCESS, message, True)
+                result = self._play_card(player, story_card)
                 
         return result
     
+    def _play_card(self, player:Player, story_card:StoryCard)->CommandResult:
+        """Plays a StoryCard for a given Player.
+            Arguments:
+                player - the Player playing this card
+                story_card - A StoryCard that has a card type not CardType.ACTION
+            Returns:
+                CommandResult indicating SUCCESS or ERROR
+        """
+        card_played = player.play_card(story_card)
+        if card_played is None:
+            message = f"Invalid card {story_card.number}"
+            result = CommandResult(CommandResult.ERROR, message, False)
+        else:
+            message = f"{player.player_initials} played card# {card_played.number}. {card_played.text}"
+            result = CommandResult(CommandResult.SUCCESS, message, True)
+        return result
+    
+    def _get_director(self)->CommandResult:
+        """Finds and returns the game director.
+            Returns: a CommandResult indicating SUCCESS or ERROR.
+                If return_code is CommandResult.SUCCESS, the director Player instance
+                is in the result properties with the key "director"
+        """
+        director:Player = None
+        if self._play_mode is PlayMode.COLLABORATIVE:
+            #
+            # find the player with the DIRECTOR role (which could be the current player) and play the card as that player
+            #
+            # self.game_state
+            directors = self.game_state.get_players_by_role(PlayerRole.DIRECTOR)
+            if len(directors) != 1:     # There is not a DIRECTOR in the game or there are more than one
+                result = CommandResult(CommandResult.ERROR, "No director found", False)
+            else:
+                director = directors[0]     # there can only be 1 director
+                result = CommandResult(CommandResult.SUCCESS, "", properties={"director":director})
+        else:
+            result = CommandResult(CommandResult.ERROR, "No director in a non-Collaborative game", False)
+            
+            return result
+                    
     def insert(self, line_number:int, card_number:int )->CommandResult:
         """Insert a story card into your current story.
             Arguments:
@@ -499,8 +553,8 @@ class GameEngineCommands(object):
             
         elif what.lower()=="all":    # show story cards by card_type
             n = 1
-            for card_type in ["Title", "Opening", "Opening/Story", "Story", "Closing", "Action"]:
-                cards = self.stories_game.get_cards_by_type(card_type)
+            for card_type in ["Action", "Title", "Opening", "Opening/Story", "Story", "Closing"]:
+                cards = self.stories_game.get_story_cards_by_type(card_type)
                 for card in cards:
                     message = f"{message}{n}. {card}"
                     n += 1
@@ -539,10 +593,20 @@ class GameEngineCommands(object):
                 initials - the player's initials if other than the current player
         """
         player = self.game_state.current_player if initials is None else self.get_player(initials)
-        done_flag = True
+            
+        if self._play_mode is PlayMode.COLLABORATIVE:
+            result = self._get_director()
+            if result.is_successful():
+                player = result.properties["director"]
+            else:
+                return result
+            
+        if self._play_mode is PlayMode.TEAM:
+            return CommandResult(CommandResult.ERROR, "Team play not implemented yet")
+        
         message = player.story_card_hand.my_story_cards.to_string(numbered)
-
-        return CommandResult(CommandResult.SUCCESS, message, done_flag)
+        
+        return CommandResult(CommandResult.SUCCESS, message)
     
     def status(self, initials:str=None)->CommandResult:
         player = self.game_state.current_player if initials is None else self.get_player(initials)

@@ -7,7 +7,7 @@ from game.commandResult import CommandResult
 from game.storiesObject import StoriesObject
 from game.player import Player
 from game.environment import Environment
-from game.gameConstants import GameConstants, GameParametersType, GenreType, CardType, ActionType, GameMode
+from game.gameConstants import GameConstants, GameParametersType, GenreType, CardType, ActionType, PlayMode, PlayerRole
 from game.gameParameters import GameParameters
 from game.cardDeck import CardDeck
 from game.storyCard import StoryCard
@@ -22,11 +22,20 @@ import logging
 
 class StoriesGame(StoriesObject):
     """
-    Represents a StoriesGame instance
+    Represents a StoriesGame instance.
+    A StoriesGame has 3 game play modes as defined by PlayModes enum:
+     * INDIVIDUAL - each player builds their own story by playing cards in their hand.
+     * TEAM - 2 or more players create a story as a team competing against other teams.
+     * COLLABORATIVE - all players collaborate to create a single story.
+     For TEAM play, one player in each team has a PlayerRole of TEAM_LEAD.
+     The other players on the team have a PlayerRole of PLAYER.
+     In a COLLABORATIVE game, one player (always player# 0) has a PlayerRole of DIRECTOR.
+     Each player plays cards out of their own hand, but the DIRECTOR maintains the single story.
+     The default PlayMode is INDIVIDUAL.
     """
 
 
-    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod", game_mode:GameMode=GameMode.INDIVIDUAL):
+    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod", play_mode:PlayMode=PlayMode.INDIVIDUAL):
         """
         """
         self._installation_id = installationId
@@ -38,7 +47,7 @@ class StoriesGame(StoriesObject):
         # load game parameters
         #
         self._load_game_configuration()
-        self._game_mode = game_mode    # individual, team, or collaborative GameMode
+        self._play_mode = play_mode    # INDIVIDUAL, TEAM, or COLLABORATIVE PlayMode
         
         self._genre = GenreType[genre.upper()]
         self._game_id = game_id
@@ -116,12 +125,12 @@ class StoriesGame(StoriesObject):
         return self._game_id
     
     @property
-    def game_mode(self)->GameMode:
-        return self._game_mode
+    def play_mode(self)->PlayMode:
+        return self._play_mode
     
-    @game_mode.setter
-    def game_mode(self, gamemode:GameMode):
-        self._game_mode = gamemode
+    @play_mode.setter
+    def play_mode(self, playmode:PlayMode):
+        self._play_mode = playmode
     
     @property
     def installation_id(self):
@@ -163,9 +172,15 @@ class StoriesGame(StoriesObject):
         """Adds a new Player to the game.
             This also deals deal_size number (typically 10) of story cards to the player
             and sets the reference to this StoriesGame instance in player.my_game
+            Note that in COLLABORATIVE game play, player#0 is assigned the PlayerRole of DIRECTOR, all others as PLAYER
         """
-        self.game_state.add_player(player)
+        player_number = self.game_state.add_player(player)    # sets the player.number, starting at 0
+        if self.play_mode is PlayMode.COLLABORATIVE and player_number == 0:
+            player.player_role = PlayerRole.DIRECTOR
+        else:
+            player.player_role = PlayerRole.PLAYER
         player.my_game = self
+        player.play_mode = self.play_mode
         # the game deals new cards to the player
         cards = self._story_card_deck.draw_cards(self.deal_size)
         player.story_card_hand.add_cards(cards)
@@ -241,6 +256,9 @@ class StoriesGame(StoriesObject):
     
     def get_cards_by_type(self, card_type:str)->List[str]:
         return self._story_card_deck.get_cards_by_type(card_type)
+    
+    def get_story_cards_by_type(self,  card_type:str)->List[StoryCard]:
+        return self._story_card_deck.get_story_cards_by_type(card_type)
     
     def get_cards(self)->List[str]:
         """Gets remaining story cards in the order they appear in the story_card_deck (CardDeck)
