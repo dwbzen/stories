@@ -169,7 +169,7 @@ class CardDeck(StoriesObject):
                 The specified StoryCard from the deck, or None if there are no remaining
                 cards of this type_to_draw/action_type
             Notes This function does NOT change the value of next_index.
-            Also it does not check if the drawn card is not active.
+            Also it does check if the drawn card is not active.
         """
         next_card = None
         card = None
@@ -177,17 +177,18 @@ class CardDeck(StoriesObject):
         next_ind = self._cards_index[next_index]   # start looking through the deck at the next index
         while next_ind < self.size():
             card = self._deck_cards[next_ind]
-            if action_type is not None:
-                if card.card_type is CardType.ACTION:
-                    if card.action_type is action_type:
-                        next_card = card
-                        break
-                    else:
-                        next_index += 1
-                        next_ind = self._cards_index[next_index]
-            elif card.card_type is card_type:
-                next_card = card
-                break
+            if card.active:
+                if action_type is not None:
+                    if card.card_type is CardType.ACTION:
+                        if card.action_type is action_type:
+                            next_card = card
+                            break
+                        else:
+                            next_index += 1
+                            next_ind = self._cards_index[next_index]
+                elif card.card_type is card_type:
+                    next_card = card
+                    break
 
             next_index += 1
             next_ind = self._cards_index[next_index]
@@ -353,6 +354,10 @@ class CardDeck(StoriesObject):
         for story_card in self._deck_cards:
             if story_card.card_type.value.startswith(card_type):
                 cards.append(story_card.text)
+        return cards
+    
+    def get_story_cards_by_type(self,  card_type:str)->List[StoryCard]:
+        cards = [sc for sc in self._deck_cards if sc.card_type.value.startswith(card_type)]
         return cards
     
     def _find_card_index(self, card_type:CardType, action_type:ActionType)->int:

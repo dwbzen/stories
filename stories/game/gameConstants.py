@@ -58,15 +58,16 @@ class ActionType(Enum):
     REORDER_LINES = "reorder_lines"
     COMPOSE = "compose"
     
-class GameMode(Enum):
+class PlayMode(Enum):
     INDIVIDUAL = "individual"
     TEAM = "team"
     COLLABORATIVE = "collaborative"
     
 class PlayerRole(Enum):
-    PLAYER = "player"
-    TEAM_LEAD = "team_lead"
-    DIRECTOR = "director"
+    PLAYER = "player"               # INDIVIDUAL PlayMode
+    TEAM_MEMBER = "team_member"     # TEAM PlayMode
+    TEAM_LEAD = "team_lead"         # TEAM PlayMode
+    DIRECTOR = "director"           # COLLABORATIVE PlayMode
 
 class GameConstants(object):
     '''

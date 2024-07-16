@@ -8,7 +8,7 @@ from game.storiesGame import StoriesGame
 from game.commandResult import CommandResult
 from game.player import Player
 from game.storiesGameEngine import StoriesGameEngine
-from game.gameConstants import GameParametersType
+from game.gameConstants import GameParametersType, PlayMode
 
 from typing import List
 import argparse, time
@@ -27,7 +27,7 @@ class GameRunner(object):
               are set from stories_game
             
     """
-    def __init__(self, installationId:str, genre:str, total_points:int, log_level:str, game_mode:str, aliases:List[str], stories_game:StoriesGame|None=None):
+    def __init__(self, installationId:str, genre:str, total_points:int, log_level:str, game_mode:str, play_mode:PlayMode, aliases:List[str], stories_game:StoriesGame|None=None):
         """
         Constructor
         """
@@ -35,6 +35,7 @@ class GameRunner(object):
         self._genre = genre
         self._total_points = total_points
         self._game_mode = game_mode 
+        self._play_mode = play_mode
         debug_flag = log_level == 'debug'
         self._debug = debug_flag           # traces the action by describing each step
         self._game_engine = None           # GameEngine instance
@@ -43,7 +44,7 @@ class GameRunner(object):
         if stories_game is None:          # create a new StoriesGame
             self.game_engine = StoriesGameEngine(stories_game=None, game_id=None, loglevel=log_level, installationId=installationId)
 
-            result = self.game_engine.create(self._installationId, genre, total_points, game_mode)
+            result = self.game_engine.create(self._installationId, genre, total_points, self._play_mode, game_mode)
             if result.return_code != CommandResult.SUCCESS:
                 logging.error("Could not create a StoriesGame")
             
@@ -74,6 +75,10 @@ class GameRunner(object):
     @property
     def game_mode(self)->str:
         return self._game_mode
+    
+    @property
+    def play_mode(self)->PlayMode:
+        return self._play_mode
 
     @property
     def game_id(self) ->str:
@@ -153,6 +158,11 @@ def main():
     parser.add_argument("--loglevel", help="Set Python logging level", type=str, choices=["debug","info","warning","error","critical"], default="warning")
     parser.add_argument("--genre", help="Story genre", type=str, choices=["horror","romance","noir"], default="horror")
     parser.add_argument("--aliases", help="Comma-separate list of 4 character aliases. This overrides gameParameters settings")
+    parser.add_argument("--playmode", help="Play mode: individual, collaborative, team", choices=["individual", "collaborative", "team" ],  default="individual" )
+    #
+    # In a collaborative play mode, players build a common story
+    # One player has the PlayerRole of DIRECTOR, the others have a PLAYER role
+    # In team play mode,  One player has the PlayerRole of DIRECTOR, the others have a TEAM_MEMBER role
     args = parser.parse_args()
     
     total_points = args.points
@@ -166,7 +176,8 @@ def main():
     player_initials = []
     
     game_mode = "prod" if args.params=="test_prod" else args.params
-    game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, args.aliases, stories_game=None)
+    play_mode = PlayMode[args.playmode.upper()]
+    game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, play_mode, args.aliases, stories_game=None)
     #
     # create players
     #
@@ -183,6 +194,7 @@ def main():
         initials = f"PN{i+1}" if players is None else player_initials[i]
         email = f"{player_name}@gmail.com"
         player_id = player_name
+        
         game_runner.execute_command(f"add player {player_name} {initials} {player_id} {email}")
         # 
         

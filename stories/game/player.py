@@ -5,7 +5,7 @@ Created on Dec 8, 2023
 '''
 
 from game.storiesObject import StoriesObject
-from game.gameConstants import CardType
+from game.gameConstants import CardType, PlayerRole, PlayMode
 from game.storyCardHand import StoryCardHand
 from game.storyCard import StoryCard
 from game.commandResult import CommandResult
@@ -19,12 +19,16 @@ class Player(StoriesObject):
     """
 
 
-    def __init__(self, number=0, name="Player", player_id="", initials="xyz", email="xyz@gmail.com", game_id=None):
+    def __init__(self, number=0, name="Player", player_id="", initials="xyz", email="xyz@gmail.com", game_id=None, \
+                 player_role=PlayerRole.PLAYER, play_mode:PlayMode=PlayMode.INDIVIDUAL):
         self._player_name = name
         self._player_initials = initials            # unique initials - no player can have the same initials
         self._player_id = player_id
         self._player_email = email
         self._game_id = game_id
+        self._player_role = player_role
+        self._my_team_name = None
+        self._play_mode = play_mode
         self._number = number       # my player number, values 0 to #players-1
         self._my_game = None        # will be a StoriesGame reference
         self._points = 0            # talied at the end of each round
@@ -92,6 +96,30 @@ class Player(StoriesObject):
     def game_id(self, value):
         self._game_id = value
 
+    @property
+    def player_role(self)->PlayerRole:
+        return self._player_role
+    
+    @player_role.setter
+    def player_role(self, role:PlayerRole):
+        self._player_role = role
+        
+    @property
+    def my_team_name(self)->str:
+        return self._my_team_name
+    
+    @my_team_name.setter
+    def my_team_name(self, name:str):
+        self._my_team_name = name
+    
+    @property
+    def play_mode(self)->PlayMode:
+        return self._play_mode
+    
+    @play_mode.setter
+    def play_mode(self, mode:PlayMode):
+        self._play_mode = mode
+    
     @property
     def my_game(self):
         """Returns StoriesGame reference
@@ -165,6 +193,10 @@ class Player(StoriesObject):
             Otherwise the story card text is added to the end of the story for card types of OPENING_STORY and STORY
             For TITLE, OPENING and CLOSING if there is an existing story card of that type
             in the player's story, it is replaced with the new one, otherwise it's added to the end.
+            
+            In a collaborative game all the players maintain their own hand, 
+            but the player with the DIRECTOR PlayerRole maintains the common story.
+            
         """
         assert(card is not None)
         card_number = card.number if isinstance(card, StoryCard) else card
