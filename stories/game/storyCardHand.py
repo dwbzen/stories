@@ -22,6 +22,7 @@ class StoryCardHand(StoriesObject):
         self._cards:StoryCardList = StoryCardList()             # the cards in my hand
         self._discards:StoryCardList = StoryCardList()
         self._my_story_cards:StoryCardList = StoryCardList()    # the cards in the player's current story
+        self._last_card_drawn_number:int = -1     # the card number of the most recent card drawn or -1 if no draws yet
     
     @property
     def cards(self) ->StoryCardList:
@@ -83,6 +84,15 @@ class StoryCardHand(StoriesObject):
         """Add a StoryCard to my hand.
         """
         self._cards.add_card(card)
+        self.last_card_drawn_number = card.number
+    
+    @property
+    def last_card_drawn_number(self)->int:
+        return self._last_card_drawn_number
+    
+    @last_card_drawn_number.setter
+    def last_card_drawn_number(self, number):
+        self._last_card_drawn_number = number
         
     def add_cards(self, cards:List[StoryCard]):
         for card in cards: self._cards.add_card(card)
@@ -106,6 +116,7 @@ class StoryCardHand(StoriesObject):
             drawn from the game card deck OR selected from the common discard pile.
             If the card's CardType is a TITLE, OPENING, or CLOSING, this will replace
             an existing story card if one exists.
+            If it's also the most recent card draw, last_card_drawn_number is set to -1
         """
         ind = self._cards.index_of(card_number)
         card:StoryCard = None
@@ -154,12 +165,15 @@ class StoryCardHand(StoriesObject):
                 the StoryCard instance selected or None if no card with that number exists
                 
             The selected card is removed from the player's hand (self.cards)
+            If it's also the most recent card draw, last_card_drawn_number is set to -1
         """
         ind = self._cards.index_of(card_number)
         card = None
         if ind >= 0:
             card = self._cards.get(ind)
             self._cards.remove(ind)
+            if card.number == self.last_card_drawn_number:
+                self.last_card_drawn_number = -1
         return card
         
     

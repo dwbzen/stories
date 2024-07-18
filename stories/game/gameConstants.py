@@ -77,7 +77,7 @@ class GameConstants(object):
             'add', 'deal', 'discard', 'done', 'draw', 'end', 
             'game_status', 'help', 'info', 'insert', 
             'list', 'list_numbered', 'ln', 'log_message', 'ls', 
-            'next', 'play', 'rank', 'read', 'rn', 'replace',
+            'next', 'play', 'play_type', 'rank', 'read', 'rn', 'replace',
             'save', 'set', 'show', 'start', 'status' ]
     
     CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files

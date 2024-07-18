@@ -274,12 +274,13 @@ class Player(StoriesObject):
         return CommandResult(return_code, message, done_flag)
         
     def info(self):
-        return  f' "name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}", "id":"{self.player_id}"'
+        return  f' "name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}", "id":"{self.player_id}" "role": {self.player_role.value}'
 
     def to_dict(self):
         pdict = {"name" : self.player_name, "number" : self.number, "initials" : self.player_initials}
         pdict['game_id'] = self.game_id
         pdict['points'] = self.points
+        pdict['role'] = self.player_role.value
         return pdict
 
     def to_JSON(self):
@@ -293,3 +294,5 @@ class Player(StoriesObject):
         self.player_initials = player_dict["initials"]
         self.player_id = player_dict["player_id"]
         self.player_email = player_dict["email"]
+        self.player_role = PlayerRole[player_dict["email"].upper()]
+        

@@ -168,23 +168,22 @@ class StoriesGame(StoriesObject):
     def deal_size(self, value):
         self._deal_size = value
     
-    def add_player(self, player:Player):
+    def add_player(self, player:Player)->int:
         """Adds a new Player to the game.
             This also deals deal_size number (typically 10) of story cards to the player
             and sets the reference to this StoriesGame instance in player.my_game
-            Note that in COLLABORATIVE game play, player#0 is assigned the PlayerRole of DIRECTOR, all others as PLAYER
+            Note that in COLLABORATIVE game play, all players initially are assigned the role of PLAYER.
+            A DIRECTOR must be added later with "add director <name> <initials>" command.
         """
         player_number = self.game_state.add_player(player)    # sets the player.number, starting at 0
-        if self.play_mode is PlayMode.COLLABORATIVE and player_number == 0:
-            player.player_role = PlayerRole.DIRECTOR
-        else:
-            player.player_role = PlayerRole.PLAYER
+        player.player_role = PlayerRole.PLAYER
         player.my_game = self
         player.play_mode = self.play_mode
         # the game deals new cards to the player
         cards = self._story_card_deck.draw_cards(self.deal_size)
         player.story_card_hand.add_cards(cards)
         player.game_id = self._game_id
+        return player_number
         
     def start(self, what:str="game") ->bool:
         """

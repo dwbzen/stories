@@ -146,6 +146,109 @@ class GameRunner(object):
                         
                 if game_over:
                     break
+                
+    def run_script(self, filePath:str, delay:int, log_comments=True):
+        """Runs a script file.
+            A script file has one legit command or a statement per line.
+            Use "add player..." to add players to the game, for example
+            "add player Don DWB dwb20230113 dwbzen@gmail.com 20 10 30" for a 60 point game
+            By default players are human. To add computer player, include "computer" as the last argument.
+            For example "add player ComputerPlayer_1 CP_1 cp120230516 dwbzen@gmail.com 20 20 20 computer"
+            Lines that begin with "# " are comments and are written to the log file as-is.
+            Statements have Python syntax and are used to check results, control looping.
+            All statements end in a "{" (for loop init), "}" (end loop) or ";" to differentiate from game commands.
+            The following statements are supported:
+            assignment
+               (variable) = (value)
+            looping
+               while (expression) {
+                   (statements and/or commands):
+            logical
+               if (variable) == (value):
+                   (commands)
+               else:
+                   (commands)
+            statements ending with ";"  are evaluated with the Python exec() or eval() functions.
+            assignments are evaluated with exec(), "counter=1"  ->  exec("counter=1")
+            The while condition is evaluated with eval(), "while counter<limit" -> eval("counter<limit")
+            other statements evaluated with exec(), "counter+=1"  ->  exec("counter+=1")
+            The logic assumes the loop body will be evaluated at least once.
+        """
+        turn_number = 1
+        game_state = self._stories_game.game_state
+        self.game_engine.automatic_run = True
+        current_player = None
+        with open(filePath, "r") as fp:
+            scriptText = fp.readlines()
+            fp.close()
+            line_number = 0
+            script_lines = len(scriptText)
+            loop_start = -1
+            loop_end = 0
+            continue_loop = False
+        fp.close()
+        #
+        while line_number < script_lines:
+            line = scriptText[line_number]
+            if len(line) > 0:
+                cmd = line.strip("\t\n ")   # drop tabs, spaces and  \n
+                if len(cmd) == 0:
+                    continue
+                
+                elif cmd.startswith("#"):    # comment line
+                    if log_comments:
+                        logging.debug(f'log_message {cmd}')
+                        result = None
+                    else:
+                        result = None
+                        
+                elif cmd.startswith("add player "):
+                    result = self.execute_command(cmd, None)
+                    
+                elif cmd.endswith(";"):    # use exec()
+                    statement = cmd[:-1]
+                    try:
+                        exec(statement)
+                        result = CommandResult(CommandResult.SUCCESS, statement, False)
+                    except Exception as ex:
+                        message = f'"{statement}" : Invalid exec statement\nexception: {str(ex)}'
+                        result = CommandResult(CommandResult.ERROR,  message,  False, exception=ex)
+                        logging.error(message)
+                        
+                elif cmd.endswith("{"):   # a while loop, execute the condition with eval()
+                    condition = cmd[:-1][6:]    # assumes "while "
+                    result = CommandResult(CommandResult.SUCCESS, condition, False)
+                    try:
+                        continue_loop = eval(condition)
+                        if not continue_loop:
+                            line_number = loop_end
+                        else:
+                            loop_start = line_number
+                    except Exception as ex:
+                        message = f'"{condition}" : Invalid eval statement\nexception: {str(ex)}'
+                        result = CommandResult(CommandResult.ERROR,  message,  False, exception=ex)
+                        logging.error(message)
+                        
+                elif cmd.endswith("}"):    # end of the loop
+                    loop_end = line_number
+                    line_number = loop_start - 1   # back to the while, -1 because line_number incremented below
+                    result = CommandResult(CommandResult.SUCCESS, cmd, False)
+                    
+                else:
+                    current_player = game_state.current_player
+                    result = self.execute_command(cmd, current_player)
+                    turn_number += 1
+                
+                if result is not None:
+                    print(f'"{cmd}": {result.message}\n')
+                    if result.return_code == CommandResult.TERMINATE:
+                        break
+                    
+                line_number +=1
+                time.sleep(delay)
+                
+        self.game_engine.end()
+
     
 def main():
     parser = argparse.ArgumentParser(description="Run a command-driven Stories Game for 1 to 6 players")
@@ -154,11 +257,19 @@ def main():
     parser.add_argument("--points", help="Total game points. This overrides gameParameters settings", type=int, choices=range(10, 100), default=20)
     parser.add_argument("--params", help="Game parameters type: 'test', 'prod', or 'custom' ", type=str, \
                         choices=["test","prod","custom"], default="test")
+    
+    parser.add_argument("--restore", "-r", help="Restore game by gameid", action="store_true", default=False)    # TODO - need --gameid for restore
     parser.add_argument("--gameid", help="Game ID", type=str, default=None)
+    
+    parser.add_argument("--script", help="Execute script file", type=str, default=None)
+    parser.add_argument("--delay", help="Delay a specified number of seconds between script commands", type=int, default=0)
+    parser.add_argument("--comments", "-c", help="Log comment lines when running a script", type=str, choices=['y','Y', 'n', 'N'], default='Y')
+    
     parser.add_argument("--loglevel", help="Set Python logging level", type=str, choices=["debug","info","warning","error","critical"], default="warning")
     parser.add_argument("--genre", help="Story genre", type=str, choices=["horror","romance","noir"], default="horror")
     parser.add_argument("--aliases", help="Comma-separate list of 4 character aliases. This overrides gameParameters settings")
     parser.add_argument("--playmode", help="Play mode: individual, collaborative, team", choices=["individual", "collaborative", "team" ],  default="individual" )
+    
     #
     # In a collaborative play mode, players build a common story
     # One player has the PlayerRole of DIRECTOR, the others have a PLAYER role
@@ -168,7 +279,8 @@ def main():
     total_points = args.points
 
     installationId = 'DWBZen2022'  # uniquely identifies 'me' as the game creator
-    careers_game = None
+    script_filePath = args.script         # complete file path
+    log_comments = args.comments.lower()=='y'
     gameId = args.gameid
     current_player = None
     player_names = args.names
@@ -178,6 +290,9 @@ def main():
     game_mode = "prod" if args.params=="test_prod" else args.params
     play_mode = PlayMode[args.playmode.upper()]
     game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, play_mode, args.aliases, stories_game=None)
+    if script_filePath is not None:
+        game_runner.run_script(script_filePath, args.delay, log_comments=log_comments)
+        return
     #
     # create players
     #

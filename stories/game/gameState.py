@@ -274,7 +274,7 @@ class GameState(StoriesObject):
         gs["elapsed_time"] = self.get_elapsed_time()
         if self.winning_player is not None:
             gs["winning_player"] = self.winning_player.player_initials
-        gs["game_complete"] = self.is_game_complete()
+        gs["game_complete"] = self.game_complete
 
         players = []
         for player in self.players:

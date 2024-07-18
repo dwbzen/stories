@@ -181,13 +181,21 @@ class StoriesGameEngine(object):
     def game_status(self) -> CommandResult:
         """Get information about the current game in progress and return in JSON format
         """
-        message =  self.game_state.to_JSON()
-        # TODO
+        message =  self.game_state.to_JSON() if self.game_state is not None else "Undefined GameState"
         return CommandResult(CommandResult.SUCCESS, message=message)
     
     @property
     def stories_game(self)->StoriesGame:
         return self._stories_game
+
+    @property
+    def automatic_run(self)->bool:
+        return self._automatic_run
+    
+    @automatic_run.setter
+    def automatic_run(self, value:bool):
+        self._automatic_run = value
+        self._game_state.automatic_run = value
     
     @property
     def debug(self)->bool:
@@ -204,6 +212,10 @@ class StoriesGameEngine(object):
     @property
     def game_id(self)->str:
         return self._game_id
+    
+    @property
+    def game_state(self)->GameState:
+        return self._game_state
     
     def create(self, installationId:str, genre:str, total_points:int, play_mode:PlayMode, game_parameters_type="test") -> CommandResult:
         """Create a new StoriesGame for a given genre.
@@ -230,11 +242,11 @@ class StoriesGameEngine(object):
     #
     #####################################
 
-    def add(self, what, player_name, initials:str, player_id:str, email:str) -> CommandResult:
-        """Add a new player to the Game. Other 'adds' TBD
+    def add(self, what, player_name, initials=None, player_id=None, email=None, role_name:str="player") -> CommandResult:
+        """Add a new player, team member or director to the Game.
     
         """
-        return self._gameEngineCommands.add(what, player_name, initials, player_id, email)
+        return self._gameEngineCommands.add(what, player_name, initials, player_id, email, role_name)
 
     def start(self, what:str="game") -> CommandResult:
         if what == "game":
@@ -312,6 +324,12 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.play(card_number, *args)
     
+    def play_type(self, card_type:CardType):
+        """Draws a card of a given type and plays it
+            Used for testing only!
+        """
+        return self._gameEngineCommands.play_type(card_type)
+    
     def insert(self, card_number:int, line_number:int )->CommandResult:
         """Insert a story card into your current story.
         """
@@ -369,6 +387,14 @@ class StoriesGameEngine(object):
     
     def rn(self, initials:str=None)->CommandResult:
         return self.read(True, initials)
+    
+    def save(self, how="json") -> CommandResult:
+        """Save the current game state.
+            Arguments: how - save format: 'json' or 'pkl' (the default).
+            save('pkl') uses joblib.dump() to save the CareersGame instance to binary pickel format.
+            This can be reconstituted with joblib.load()
+        """
+        return self._gameEngineCommands.save_game(self._game_filename_base, self.game_id, how=how) 
 
     def status(self, initials:str=None)->CommandResult:
         return self._gameEngineCommands.status(initials)

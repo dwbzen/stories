@@ -14,7 +14,7 @@ from game.storyCardList import StoryCardList
 
 from typing import List
 import logging, json
-# from stories.game.storyCardHand import StoryCardHand
+
 
 
 class GameEngineCommands(object):
@@ -127,18 +127,29 @@ class GameEngineCommands(object):
     #
     #####################################
 
-    def add(self, what, player_name, initials=None, player_id=None, email=None) -> CommandResult:
+    def add(self, what, player_name, initials, player_id, email, role_name) -> CommandResult:
         """Add a new player or team to the Game.
             Note - team semantics TBD
         """
         if what == 'player':
-            player = Player(name=player_name, player_id=player_id, initials=initials, email=email, game_id=None)
+            player_role = PlayerRole.PLAYER if role_name is None else PlayerRole[role_name.upper()]
+            player = Player(name=player_name, player_id=player_id, initials=initials, email=email, game_id=None, player_role=player_role)
             self._stories_game.add_player(player)        # adds to GameState which also sets the player number
             message = player.to_JSON()
             self.log(message)
             result = CommandResult(CommandResult.SUCCESS, message=message)
         elif what == 'team':
             pass    # TODO
+        elif what == 'director':
+            # find the player with the given initials and
+            # update the role to PlayerRole.DIRECTOR
+            #
+            player = self.get_player(initials)
+            if player is None:
+                result = CommandResult(CommandResult.ERROR, message=f"No player with initials {initials} is in this game. Please 'add player' first")
+            else:
+                player.player_role = PlayerRole.DIRECTOR
+                result =  CommandResult(CommandResult.SUCCESS, message=f"Player {initials} is now the Director")
         else:
             message = f"Cannot add {what} here."
             result = CommandResult(CommandResult.ERROR, message=message, done_flag=False)
@@ -299,6 +310,8 @@ class GameEngineCommands(object):
                        <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
                 action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
                         "stir_pot", "draw_new", "change_name"
+                        
+            The last_card_drawn_number in the player's story_card_hand is also updated with the new card's number.
             @see StoriesGame.draw_card() 
         """
         card,message = self.stories_game.draw_card(what, action_type)
@@ -309,7 +322,7 @@ class GameEngineCommands(object):
             player._story_card_hand.add_card(card)
             player.card_drawn = True
             message = f"{ordinal}. {player.player_initials} drew a {card.card_type.value} ({card.number}): {card.text}"
-            result = CommandResult(CommandResult.SUCCESS, message, done_flag=False)
+            result = CommandResult(CommandResult.SUCCESS, message, properties={"number": str(card.number)})
             
         return result
 
@@ -330,11 +343,12 @@ class GameEngineCommands(object):
         return result
         
     
-    def play(self, card_number:int, *args) ->CommandResult:
+    def play(self, card_id:int|str, *args) ->CommandResult:
         """Play a story/action card from a player's hand OR the discard deck
             Arguments:
-                card_number - the StoryCard to play.
-                args - additional arguments, depending on the type of action card played.
+                card_id - the StoryCard to play, or the word "last"
+                    to play the most recent card drawn.
+                args - additional arguments for ACTION cards, depending on the ActionType of the card played.
                     
             Examples: play 110        ; play a single story card
                       play 200 110    ; play a MEANWHILE ActionCard (#200), adding "Meanwhile" to story card 110
@@ -348,6 +362,11 @@ class GameEngineCommands(object):
             but the player with the DIRECTOR PlayerRole maintains the common story.
         """
         player = self.game_state.current_player
+        if isinstance(card_id, str) and card_id == "last" and player.story_card_hand.last_card_drawn_number >= 0:
+            card_number = player.story_card_hand.last_card_drawn_number
+        else:
+            card_number = card_id
+            
         story_card = player.story_card_hand.get_card(card_number)
         if story_card is None:
                 message = f"Invalid card number: {card_number}"
@@ -366,20 +385,37 @@ class GameEngineCommands(object):
                     director:Player = result.properties["director"]
                     player.remove_card(card_number)
                     director.add_card(story_card)
-                    result = self._play_card(director, story_card)
-                    
+                    result = self._play_card(director, story_card, as_player=player)
+                else:
+                    result.message = f"{result.message}\nA Director is required for collaborative games. Please add one."
             elif self._play_mode is PlayMode.TEAM:
-                pass    # TODO
+                result = CommandResult(CommandResult.ERROR, "Team play mode not implemented.")    # TODO
             else:
                 result = self._play_card(player, story_card)
                 
         return result
     
-    def _play_card(self, player:Player, story_card:StoryCard)->CommandResult:
+    def play_type(self, card_type:str):
+        """Draws a card of a given type and plays it
+            Used for testing only!
+            Note that this works for story element types only, not action cards.
+            For action cards, first draw the action type you want,
+            for example "draw action meanwhile", then use "play last" to play the card.
+            Primary use of play_type is in scripting.
+        """
+        result = self.draw(card_type, action_type=None)
+        if result.is_successful():
+            card_number = result.properties["number"]
+            play_result = self.play(card_number)
+            result.message = f"{result.message}\n{play_result.message}"
+        return result
+    
+    def _play_card(self, player:Player, story_card:StoryCard, as_player:Player=None)->CommandResult:
         """Plays a StoryCard for a given Player.
             Arguments:
                 player - the Player playing this card
                 story_card - A StoryCard that has a card type not CardType.ACTION
+                as_player - in a Collaborative game, the player actually playing the card instead of the Director.
             Returns:
                 CommandResult indicating SUCCESS or ERROR
         """
@@ -388,7 +424,10 @@ class GameEngineCommands(object):
             message = f"Invalid card {story_card.number}"
             result = CommandResult(CommandResult.ERROR, message, False)
         else:
-            message = f"{player.player_initials} played card# {card_played.number}. {card_played.text}"
+            if as_player is not None:
+                message = f"{as_player.player_initials} played card# {card_played.number}. {card_played.text}"
+            else:
+                message = f"{player.player_initials} played card# {card_played.number}. {card_played.text}"
             result = CommandResult(CommandResult.SUCCESS, message, True)
         return result
     
@@ -413,7 +452,7 @@ class GameEngineCommands(object):
         else:
             result = CommandResult(CommandResult.ERROR, "No director in a non-Collaborative game", False)
             
-            return result
+        return result
                     
     def insert(self, line_number:int, card_number:int )->CommandResult:
         """Insert a story card into your current story.
@@ -521,7 +560,15 @@ class GameEngineCommands(object):
         return CommandResult(return_code, message, done_flag)
     
     def _list(self, story_card_hand, how:str, sort_list=False) ->str:
-        
+        """List the cards in a player's StoryCardHand
+           Arguments:
+               story_card_hand - a player's StoryCardHand
+               how - "numbered" to number the entries (1 through #cards)
+               sort_list - if True the list will be sorted by CardType.
+            Returns: the list as a string
+            The card with the number == last_card_drawn_number is highlighted with an "*"
+            @see StoryCardHand.sort()
+        """
         if how=="numbered":
             n = 1
             if sort_list:
@@ -530,8 +577,10 @@ class GameEngineCommands(object):
                 cards = story_card_hand.cards.cards
                 
             card_text = ""
+            last_drawn = story_card_hand.last_card_drawn_number
             for card in cards:
-                card_text = card_text + f"{n}. {str(card)}"
+                tag = "*" if card.number == last_drawn else " "
+                card_text = card_text + f"{tag}{n}. {str(card)}"
                 n += 1
         else:
             card_text = str(story_card_hand.cards)
@@ -601,12 +650,26 @@ class GameEngineCommands(object):
             else:
                 return result
             
-        if self._play_mode is PlayMode.TEAM:
+        elif self._play_mode is PlayMode.TEAM:
             return CommandResult(CommandResult.ERROR, "Team play not implemented yet")
         
+
         message = player.story_card_hand.my_story_cards.to_string(numbered)
         
         return CommandResult(CommandResult.SUCCESS, message)
+
+    def save_game(self, gamefile_base_name:str, game_id:str, how='json') -> CommandResult:
+        """Save the complete serialized game state so it can be restarted at a later time.
+            Arguments:
+                how - serialization format to use: 'json', 'jsonpickle' or 'pkl' (pickle)
+            NOTE that the game state is automatically saved in pkl format after each player's turn.
+            NOTE saving in JSON format saves only the GameState; pkl and jsonpickle persist StoriesGame
+        """
+        extension = 'pkl' if how=='pkl' else 'json'
+        filename = f'{gamefile_base_name}.{extension}'      # folder/filename
+        
+        return CommandResult(CommandResult.SUCCESS, "save game not yet implemented - but soon!")
+        
     
     def status(self, initials:str=None)->CommandResult:
         player = self.game_state.current_player if initials is None else self.get_player(initials)

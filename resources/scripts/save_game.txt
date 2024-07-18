@@ -1,0 +1,27 @@
+# add 4 players and save the game
+#
+add player Don DWB Don dwbzen@gmail.com
+add player Brian BDB Brian brian.bacon01@gmail.com;add player Beth EJB Beth beth@gmail.com;add player Cheryl CJL Cheryl lister.cheryl@gmail.com
+start
+# DWB
+draw
+status
+ln
+next
+# BDB
+draw
+ln
+next
+# EJB
+draw
+ln
+next
+#CJL
+draw
+ln
+next
+# DWB
+# end the game
+game_status
+save
+end game

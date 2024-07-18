@@ -13,10 +13,12 @@ class StoryCard(StoriesObject):
     A Story card has a CardType that indicates how it can be used -
     as a Title, Opening, Opening or Story, Story, or Closing -
     and the text. The text consists of 1 or more sentences.
-    If the multi_card flag on an action card is True, the player
-    may play an additional story card at the same time.
-    The syntax is comma-separated card numbers with the\
-    action multi-card appearing first.
+    If the multi_card flag on an action card is True, the player may play an additional story card at the same time.
+    The syntax is comma-separated card numbers with the action multi-card appearing first.
+    
+    A sort_key is created in order to allow sorting a list of StoryCard.
+    The sort_key is a combination of the card.number and the CardType in this order:
+    CardType.ACTION, CardType.TITLE, CardType.OPENING, CardType.OPENING_STORY, CardType.STORY, CardType.CLOSING
     """
 
 

@@ -1,0 +1,32 @@
+# creates a Stories game and adds 4 players 
+# name, initials, player_id, email : the player_id is the same as the name
+# A sample command line to run this script file is:
+#    --loglevel debug --genre horror --params test  --script  <project_root>/resources/scripts/addPlayer_test.txt
+# where <project_root> is the git folder, for example /Users/dwbze/OneDrive/Documents/Compile/stories/
+#
+add player Don DWB Don dwbzen@gmail.com
+add player Brian BDB Brian brian.bacon01@gmail.com
+add player Beth EJB Beth beth@gmail.com
+add player Cheryl CJL Cheryl lister.cheryl@gmail.com
+start
+# DWB
+draw
+status
+ln
+next
+# BDB
+draw
+ln
+next
+# EJB
+draw
+ln
+next
+#CJL
+draw
+ln
+next
+# DWB
+# end the game
+game_status
+end game
