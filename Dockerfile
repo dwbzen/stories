@@ -8,6 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Turns off buffering for easier container logging
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/stories/
 
 # Install pip requirements
 COPY requirements.txt .
@@ -24,9 +25,7 @@ RUN python -m pip install -e .
 
 USER root
 
-WORKDIR /app/stories
+WORKDIR /app/stories/server
 #RUN echo 'DB_URL=mongodb://root:rootpassword@localhost' > .env
 
-#docker run --rm -it --network host careers
-CMD ["/bin/sh"]
-#CMD ["uvicorn", "--port", "9000", "--host", "0.0.0.0",  "app:app"]
+CMD ["uvicorn", "--port", "9000", "--host", "0.0.0.0",  "server:app"]
