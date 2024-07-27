@@ -16,17 +16,20 @@ class CommandResult(StoriesObject):
     TERMINATE = 2       # terminate the game
     EXECUTE_NEXT = 3    # successful, and execute the next_action for the current player
     NEED_PLAYER_CHOICE = 4  # successful, but need player choice as to what to do next
+    WARNING = 5         # Not an error, just a warning
     
 
-    def __init__(self, return_code:int, message:str=None, done_flag:bool=True, next_action:str=None, exception:Exception=None, \
+    def __init__(self, return_code:int=SUCCESS, message:str=None, done_flag:bool=True, next_action:str=None, exception:Exception=None, \
                  json_message:str=None, properties:dict=None):
         """Constructor, baby.
-            Arguments:
+            Arguments: all the arguments have a default value
                 return_code - integer return code:
-                    SUCCESS = 0  Successful result
+                    SUCCESS = 0  Successful result   (the default)
                     ERROR = 1  There was an error. message contains the error message
                     TERMINATE = 2  terminate the game
                     EXECUTE_NEXT = 3  success, and execute the next_action for the current player
+                    NEED_PLAYER_CHOICE = 4
+                    WARNING = 5
                 message - a message string to be displayed to the player. Can be blank or None, default value is None
                 done_flag - if  True, this player's turn is completed, False otherwise. Default value is True
                 next_action - next action to perform for this player, default is None. 

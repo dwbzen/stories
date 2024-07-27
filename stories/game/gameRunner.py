@@ -147,7 +147,7 @@ class GameRunner(object):
                 if game_over:
                     break
                 
-    def run_script(self, filePath:str, delay:int, log_comments=True):
+    def run_script(self, filePath:str, delay:int, log_comments=True)->CommandResult:
         """Runs a script file.
             A script file has one legit command or a statement per line.
             Use "add player..." to add players to the game, for example
@@ -188,11 +188,13 @@ class GameRunner(object):
             continue_loop = False
         fp.close()
         #
+        result = None
         while line_number < script_lines:
             line = scriptText[line_number]
             if len(line) > 0:
                 cmd = line.strip("\t\n ")   # drop tabs, spaces and  \n
                 if len(cmd) == 0:
+                    line_number +=1
                     continue
                 
                 elif cmd.startswith("#"):    # comment line
@@ -240,19 +242,20 @@ class GameRunner(object):
                     turn_number += 1
                 
                 if result is not None:
-                    print(f'"{cmd}": {result.message}\n')
+                    print(f'"{cmd}":\n {result.message}')
                     if result.return_code == CommandResult.TERMINATE:
                         break
                     
                 line_number +=1
                 time.sleep(delay)
-                
-        self.game_engine.end()
+        if result is None:
+            result = CommandResult(CommandResult.SUCCESS, message="END OF SCRIPT")
+        return result
 
     
 def main():
     parser = argparse.ArgumentParser(description="Run a command-driven Stories Game for 1 to 6 players")
-    parser.add_argument("--nplayers", "-n", help="The number of players", type=int, choices=range(1,6), default=3)
+    parser.add_argument("--nplayers", "-n", help="The number of players", type=int, choices=range(0,6), default=3)
     parser.add_argument("--names", help="Comma-separated list of player names. If set, this determines #of players and overrides default players")
     parser.add_argument("--points", help="Total game points. This overrides gameParameters settings", type=int, choices=range(10, 100), default=20)
     parser.add_argument("--params", help="Game parameters type: 'test', 'prod', or 'custom' ", type=str, \
@@ -278,7 +281,7 @@ def main():
     
     total_points = args.points
 
-    installationId = 'DWBZen2022'  # uniquely identifies 'me' as the game creator
+    installationId = 'DWBZen2024'  # uniquely identifies 'me' as the game creator
     script_filePath = args.script         # complete file path
     log_comments = args.comments.lower()=='y'
     gameId = args.gameid
@@ -290,9 +293,15 @@ def main():
     game_mode = "prod" if args.params=="test_prod" else args.params
     play_mode = PlayMode[args.playmode.upper()]
     game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, play_mode, args.aliases, stories_game=None)
+    
     if script_filePath is not None:
-        game_runner.run_script(script_filePath, args.delay, log_comments=log_comments)
-        return
+        result = game_runner.run_script(script_filePath, args.delay, log_comments=log_comments)
+        if result.return_code == CommandResult.TERMINATE:
+            return
+        else:
+            # continue on in command mode
+            game_runner.run_game()
+    
     #
     # create players
     #

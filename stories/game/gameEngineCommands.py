@@ -9,13 +9,11 @@ from game.storiesGame import StoriesGame
 from game.commandResult import CommandResult
 from game.gameState import GameState
 from game.player import Player
+from game.team import Team
 from game.storyCard import StoryCard
-from game.storyCardList import StoryCardList
 
 from typing import List
 import logging, json
-
-
 
 class GameEngineCommands(object):
     """Implementation of StoriesGame player commands.
@@ -45,6 +43,10 @@ class GameEngineCommands(object):
     @property
     def game_state(self)->GameState:
         return self._game_state
+    
+    @property
+    def play_mode(self)->PlayMode:
+        return self._play_mode
         
     @property
     def debug(self):
@@ -64,25 +66,34 @@ class GameEngineCommands(object):
         command = command_args[0]
         if not command in GameConstants.COMMANDS:
             return CommandResult(CommandResult.ERROR,  message=f'Invalid command: "{command}"',  done_flag=False)
-        if len(command_args) > 1:
-            args = command_args[1:]
-            command = command + "("
-            for arg in args:
-                if arg.isdigit():
-                    command = command + arg + ","
-                else:
-                    command = command + f'"{arg}",'
-        
-            command = command[:-1]    # remove the trailing comma
+        if command.lower() == "update":    # special treatment for keyword arguments
+            # update requires 3 arguments: what (for example 'player'), target (for example 'dwb')
+            # and keyword arguments (Dict), for example role='team_lead',name='Donnie'
+            # 
+            if len(command_args) != 4:   # 'update' + 3 args
+                return CommandResult(CommandResult.ERROR,  message=f'Invalid update command: "{command_args}"',  done_flag=False)
+            command = f"update('{command_args[1]}','{command_args[2]}',{command_args[3]})"
         else:
-            command = command + "("
+            if len(command_args) > 1:
+                args = command_args[1:]
+                command = command + "("
+                for arg in args:
+                    if arg.isdigit():
+                        command = command + arg + ","
+                    else:
+                        command = command + f'"{arg}",'
             
-        if addl_args is not None and len(addl_args) > 0:
-            for arg in addl_args:
-                command = command + f'"{arg}",'
-            command = command[:-1]
-
-        command += ")"
+                command = command[:-1]    # remove the trailing comma
+            else:
+                command = command + "("
+                
+            if addl_args is not None and len(addl_args) > 0:
+                for arg in addl_args:
+                    command = command + f'"{arg}",'
+                command = command[:-1]
+    
+            command += ")"
+            
         return CommandResult(CommandResult.SUCCESS, command, False)
             
     def log(self, message):
@@ -112,6 +123,27 @@ class GameEngineCommands(object):
                     break
         return player
     
+    def _get_player_for_play_mode(self, player)->CommandResult:
+        """Gets the Director or Team lead of a given player.
+            If successful, the player instance is returned in the command result properties: 
+                player = result.properties["target_player"] 
+        """
+
+        if self.play_mode is PlayMode.COLLABORATIVE:
+            result = self._get_director()
+            result.properties["target_player"]  = result.properties["director"]
+
+        elif self.play_mode is PlayMode.TEAM:
+            team_name = player.my_team_name
+            result = self._get_team_lead(team_name)
+            result.properties["target_player"]  = result.properties["team_lead"]
+
+        else:    # PlayMode.INDIVIDUAL
+            result = CommandResult(CommandResult.SUCCESS, message=None, properties={"target_player":player})
+                
+        return result
+ 
+    
     def check_errors(self)->bool:
         """Return True if checking for player errors.
             Bypassing error checks is useful for testing.
@@ -138,8 +170,10 @@ class GameEngineCommands(object):
             message = player.to_JSON()
             self.log(message)
             result = CommandResult(CommandResult.SUCCESS, message=message)
-        elif what == 'team':
-            pass    # TODO
+        elif what == 'team':    # really should use add_team command
+            name = player_name  # in this context, this is the team name
+            args = initials     # in this context, this is a comma-seperated list of initials
+            result = self.add_team(name, args)
         elif what == 'director':
             # find the player with the given initials and
             # update the role to PlayerRole.DIRECTOR
@@ -155,6 +189,83 @@ class GameEngineCommands(object):
             result = CommandResult(CommandResult.ERROR, message=message, done_flag=False)
             
         return result
+
+    def add_team(self, name, args:str) ->CommandResult:
+        """Add players to a new or existing team
+            Arguments:
+                name - the team name, can be new or existing team
+                args - a comma-separated list of player initials
+            Note that the first player listed is assigned the TEAM_LEAD role.
+            This can be changed with the 'update player' command (which is TBD)
+        """
+        if self.game_state.get_team(name) is None:
+            players = []
+            plist = args.split(',')
+            result = self._get_players(plist)
+            return_code = result.return_code
+            if return_code == CommandResult.SUCCESS:
+                message = f"Players added to team {name} {result.message} "
+                team = Team(name)
+                players = result.properties["members"]
+                for i in range(len(players)):
+                    # default the first player in the list as TEAM_LEAD
+                    player_role = PlayerRole.TEAM_LEAD if i==0 else PlayerRole.PLAYER
+                    team.add_member(players[i], player_role)
+                    players[i].my_team_name = name
+                self.game_state.add_team(team)
+            else:    # some players don't exist
+                message = result.message
+        else:
+            message=f"team: '{name}' already exists"
+            return_code = CommandResult.WARNING
+        
+        return CommandResult(return_code, message=message)
+    
+    def _get_players(self, pids:List[str]) ->CommandResult:
+        """Returns a List[Player] given a list of player initials.
+            If SUCCESS, the player list is the result property "members"
+            Otherwise the message has the player ids not found.
+        """
+        players = []
+        message = ""
+        return_code = CommandResult.SUCCESS
+        for pid in pids:    # player initials
+            player = self.game_state.get_player_by_initials(pid)
+            if player is not None:
+                players.append(player)
+                message = f"{message} {pid} "
+            else:
+                return_code = CommandResult.ERROR
+                message = f"{message} No such player: {pid} "
+        result = CommandResult(return_code, message)
+        result.properties = {"members":players}
+        return result
+
+    def update(self, what:str, target:str, **kwargs)->CommandResult:
+        """Update select properties of a Player, Team, or StoriesGame
+            Arguments:
+                what - the object to update: player, team, game
+                target - the target player (initials), team (team name), game_id or 'this'
+                kwargs - keyword arguments (dict) for the specified object
+            
+            target == 'player', supported Player properties are role, player_name, player_role, and player_email
+                      Example: update player dwb player_role='team_lead',player_email='foo@gmail.com'
+            target == 'team', supported Team property is name
+                      Example: update team Team_XXX name='Team_USA'
+            target == 'game', the target is 'this' in reference to the current game, or a valid game_id
+                      Supported properties are total_points and game_id. Examples:
+                        update game DWBZen2022_20240723_110800_032649_78393 game_id='DWBZen2024_20240723'
+                        update game this total_points='30'
+            
+            When changing a player's role from PLAYER to either TEAM_LEAD or DIRECTOR,
+            if there is already a player with that role, their new role will be PLAYER.
+            Changing a team name will also change the team name of players in that team.
+            
+            TODO finish the implementation
+            
+        """
+        self.log(f"update: what: {what}, target: {target}, kwargs: {kwargs} {type(kwargs)}")
+        return CommandResult(CommandResult.SUCCESS, message=f"what: {what}, target: {target}, kwargs: {kwargs}")
 
     def start(self) -> CommandResult:
         message = f'Starting game {self.game_id}'
@@ -346,9 +457,13 @@ class GameEngineCommands(object):
     def play(self, card_id:int|str, *args) ->CommandResult:
         """Play a story/action card from a player's hand OR the discard deck
             Arguments:
-                card_id - the StoryCard to play, or the word "last"
+                card_id - the StoryCard to play, or the string "last"
                     to play the most recent card drawn.
                 args - additional arguments for ACTION cards, depending on the ActionType of the card played.
+            
+            Returns:
+                CommandResult - If the CommandResult return_code is SUCCESS, the StoryCard instance is returned
+                                in the result properties with key "story_card_played"
                     
             Examples: play 110        ; play a single story card
                       play 200 110    ; play a MEANWHILE ActionCard (#200), adding "Meanwhile" to story card 110
@@ -360,6 +475,13 @@ class GameEngineCommands(object):
             
             In a collaborative game all the players maintain their own hand,
             but the player with the DIRECTOR PlayerRole maintains the common story.
+            In a team game, the TEAM_LEAD of each team maintains the story common to the team.
+            
+            If the CommandResult is successful, the StoryCard instance is returned
+            in the result properties with key "story_card_played"
+            
+            Note - When inserting a TITLE, OPENING or CLOSING story element, the existing one (if it exists) is replaced.
+            
         """
         player = self.game_state.current_player
         if isinstance(card_id, str) and card_id == "last" and player.story_card_hand.last_card_drawn_number >= 0:
@@ -388,11 +510,23 @@ class GameEngineCommands(object):
                     result = self._play_card(director, story_card, as_player=player)
                 else:
                     result.message = f"{result.message}\nA Director is required for collaborative games. Please add one."
+                    
             elif self._play_mode is PlayMode.TEAM:
-                result = CommandResult(CommandResult.ERROR, "Team play mode not implemented.")    # TODO
+                team_name = player.my_team_name
+                result = self._get_team_lead(team_name)
+                if result.is_successful():
+                    team_lead:Player = result.properties["team_lead"]
+                    player.remove_card(card_number)
+                    team_lead.add_card(story_card)
+                    result = self._play_card(team_lead, story_card, as_player=player)
+                else:
+                    result.message = f"{result.message}\nA team lead is required for team games. Please add one to team '{team_name}'"         
             else:
                 result = self._play_card(player, story_card)
                 
+        if result.is_successful():
+            result.properties = {"story_card_played":story_card}
+            
         return result
     
     def play_type(self, card_type:str):
@@ -415,9 +549,11 @@ class GameEngineCommands(object):
             Arguments:
                 player - the Player playing this card
                 story_card - A StoryCard that has a card type not CardType.ACTION
-                as_player - in a Collaborative game, the player actually playing the card instead of the Director.
+                as_player - in a Collaborative or Team game, the player actually playing the card instead of the Director/Team Lead.
             Returns:
                 CommandResult indicating SUCCESS or ERROR
+                
+            Note - When inserting a TITLE, OPENING or CLOSING story element, the existing one (if it exists) is replaced.
         """
         card_played = player.play_card(story_card)
         if card_played is None:
@@ -445,7 +581,7 @@ class GameEngineCommands(object):
             # self.game_state
             directors = self.game_state.get_players_by_role(PlayerRole.DIRECTOR)
             if len(directors) != 1:     # There is not a DIRECTOR in the game or there are more than one
-                result = CommandResult(CommandResult.ERROR, "No director found", False)
+                result = CommandResult(CommandResult.ERROR, "No director was found", False)
             else:
                 director = directors[0]     # there can only be 1 director
                 result = CommandResult(CommandResult.SUCCESS, "", properties={"director":director})
@@ -453,12 +589,38 @@ class GameEngineCommands(object):
             result = CommandResult(CommandResult.ERROR, "No director in a non-Collaborative game", False)
             
         return result
+    
+    def _get_team_lead(self, team_name:str):
+        """Finds and returns the team lead for a given team
+            Arguments:
+                team_name - the name of an existing team
+            Returns: a CommandResult indicating SUCCESS or ERROR.
+                If return_code is CommandResult.SUCCESS, the TEAM_LEAD Player instance
+                is in the result properties with the key "team_lead"
+        """
+        team_lead:Player = None
+        if self._play_mode is PlayMode.TEAM:
+            #
+            # find the player with the DIRECTOR role (which could be the current player) and play the card as that player
+            #
+            # self.game_state
+            team_leads = self.game_state.get_team_players_by_role(team_name, PlayerRole.TEAM_LEAD)
+            if len(team_leads) != 1:     # There is not a TEAM_LEAD for this team or there are more than one
+                result = CommandResult(CommandResult.ERROR, f"No team lead for '{team_name}' was found", False)    
+            else:
+                team_lead = team_leads[0]
+                result = CommandResult(CommandResult.SUCCESS, "", properties={"team_lead":team_lead})
+        else:
+            result = CommandResult(CommandResult.ERROR, "No team leads in a non-Team game", False)
+        
+        return result
                     
-    def insert(self, line_number:int, card_number:int )->CommandResult:
+    def insert(self, line_number:int, card_number:int, how="after" )->CommandResult:
         """Insert a story card into your current story.
             Arguments:
-                line_number - the line# in your current story to insert a new card after.
+                line_number - the line# in your current story to insert the new card
                 card_number - the number of a story card in your hand
+                how - insert "before" or "after" (the default) the given line_number
             Returns:
                 CommandResult.ERROR if the card_number or line_number is invalid (doesn't exist)
                 else CommandResult.SUCCESS
@@ -640,23 +802,34 @@ class GameEngineCommands(object):
                 numbered - if True number the lines starting at 1 with the first story card.
                         The Title and Closing line(s) are not numbered.
                 initials - the player's initials if other than the current player
+            In a COLLABORATIVE game mode the Director maintains the common story.
+            In TEAM Play, the player's team lead maintains the story for the team.
         """
         player = self.game_state.current_player if initials is None else self.get_player(initials)
-            
+        return_code = CommandResult.SUCCESS
         if self._play_mode is PlayMode.COLLABORATIVE:
             result = self._get_director()
             if result.is_successful():
                 player = result.properties["director"]
+                message = player.story_card_hand.my_story_cards.to_string(numbered)
             else:
-                return result
+                message = result.message
+                return_code = CommandResult.ERROR
             
         elif self._play_mode is PlayMode.TEAM:
-            return CommandResult(CommandResult.ERROR, "Team play not implemented yet")
+            team_name = player.my_team_name
+            result = self._get_team_lead(team_name)
+            if result.is_successful():
+                player = result.properties["team_lead"]
+                message = player.story_card_hand.my_story_cards.to_string(numbered)
+            else:
+                message = f"{result.message}\nA team lead is required for team games. Please add one to team '{team_name}'"   
+                return_code = CommandResult.WARNING
         
+        else:
+            message = player.story_card_hand.my_story_cards.to_string(numbered)
 
-        message = player.story_card_hand.my_story_cards.to_string(numbered)
-        
-        return CommandResult(CommandResult.SUCCESS, message)
+        return CommandResult(return_code, message)
 
     def save_game(self, gamefile_base_name:str, game_id:str, how='json') -> CommandResult:
         """Save the complete serialized game state so it can be restarted at a later time.
@@ -688,6 +861,18 @@ class GameEngineCommands(object):
         else:
             message = player.info()
         return CommandResult(return_code, message)
+    
+    def team_info(self, team_name='all')->CommandResult:
+        """Displays info for a given team or all teams
+            Arguments:
+                team_name - an existing team name or 'all' (the default)
+            Returns: a CommandResult, the message contains the team info
+        """
+        result = CommandResult()
+        
+        
+        return result
+        
         
     def log_message(self, message):
         """Logs a given message to the log file and console if debug flag is set
@@ -699,7 +884,7 @@ class GameEngineCommands(object):
             Arguments:
                 player - a Player instance
                 action_card - a StoryCard with card_type CardType.ACTION
-                args - a single card number OR a comma-separated list of additional card numbers or strings
+                args - a single card number OR a space-separated list of additional card numbers or strings
                 
             Examples of Action cards:
                 meanwhile: play 249 110           ; card #249 is the meanwhile ActionCard, 110 is a story card
@@ -724,13 +909,12 @@ class GameEngineCommands(object):
                                                                    
                 NOTES: story line numbering starts at 0, which will be a Title story card.
                 Change_name supported only in the online version of the game.
-                In the above examples the opponent's name is "Brian" and his initials are "BRI"
-                The get_player API works for both.
+                In the above examples the player's name is "Brian" and his initials are "BRI"
+                In COLLABORATIVE and TEAM play mode, relevant actions are 
+                played against the director's and team lead's story respectively.
         """
         action_type = action_card.action_type        # ActionType
         num_args = len(args)
-        card_numbers = []
-        story_cards = []
         
         message = f'{player.player_initials} Playing  {action_card.action_type}: {action_card.text}'
         min_args = action_card.min_arguments
@@ -746,6 +930,7 @@ class GameEngineCommands(object):
 
         return_code = CommandResult.SUCCESS
         done_flag = True
+        
         match(action_type):
             case ActionType.DRAW_NEW:
                 # Discard up to 4 cards and draw replacements
@@ -771,9 +956,23 @@ class GameEngineCommands(object):
                     message = f"You are not holding a card with number {num}"
                     return self._log_error(message)
                 
-                action_card_played = player.play_card(action_card)
-                story_card_played = player.play_card(story_card)
-                message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
+                result = self._get_player_for_play_mode(player)    # the Player maintaining the story
+                target_player = result.properties["target_player"]
+                if not target_player._story_card_hand.cards.card_exists(action_card.number):
+                    #
+                    # add the Meanwhile to the target_player's hand
+                    #
+                    player.remove_card(action_card.number)
+                    target_player.add_card(action_card)
+                
+                action_card_played = target_player.play_card(action_card)
+                play_result:CommandResult = self.play(num)
+                if play_result.is_successful():
+                    story_card_played = play_result.properties["story_card_played"]
+                    message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
+                else:
+                    message = play_result.message
+                    return_code = play_result.return_code
                 
             case ActionType.STEAL_LINES:
                 # Steal a story card played by another player
@@ -824,6 +1023,11 @@ class GameEngineCommands(object):
             
             case ActionType.REORDER_LINES:
                 message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
+                return_code = CommandResult.WARNING
+            
+            case ActionType.CALL_IN_FAVORS:
+                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
+                return_code = CommandResult.WARNING
             
             case ActionType.COMPOSE:
                 text = " ".join(args)

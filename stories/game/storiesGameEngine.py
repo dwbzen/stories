@@ -155,22 +155,27 @@ class StoriesGameEngine(object):
         cmd_result.message = messages
         return cmd_result
 
-    def _evaluate(self, commandTxt, args=[]) -> CommandResult:
+    def _evaluate(self, command:str, args=[]) -> CommandResult:
         """Evaulates a command string with eval()
             Arguments:
                 commandTxt - the command name + any arguments to evaluate.
                 args - an optional list of additional arguments
             Returns - a CommandResult
+            
+            To pass keyword arguments (kwargs), use a format similar to: 
+            update player dwb role='team_lead',email='dwb@gmail.com'
         """
-        command_result = GameEngineCommands.parse_command_string(commandTxt, args)
+        command_result = GameEngineCommands.parse_command_string(command, args)
         if command_result.return_code != CommandResult.SUCCESS:     # must be an error
             return command_result
         
-        command = "self." + command_result.message
+        command = command_result.message
+        eval_command = "self." + command
         command_result = None
-        logging.debug("_evaluate: " + command)
+        logging.debug("_evaluate: " + eval_command)
+        
         try:
-            command_result = eval(command)
+            command_result = eval(eval_command)
         except Exception as ex:
             message = f'"{command}" : Invalid command format or syntax\n exception: {str(ex)}'
             command_result = CommandResult(CommandResult.ERROR,  message=message,  done_flag=False, exception=ex)
@@ -247,6 +252,16 @@ class StoriesGameEngine(object):
     
         """
         return self._gameEngineCommands.add(what, player_name, initials, player_id, email, role_name)
+    
+    def add_team(self, name, *args)->CommandResult:
+        return self._gameEngineCommands.add_team(name, *args)
+    
+    def update(self, what:str, target:str, **kwargs)->CommandResult:
+        """Update properties of a Player or Team
+        """
+        print(f"engine update - what: '{what}', target: {target}, kwargs: '{kwargs}'")
+        return self._gameEngineCommands.update(what, target, **kwargs)
+        
 
     def start(self, what:str="game") -> CommandResult:
         if what == "game":
@@ -434,4 +449,14 @@ class StoriesGameEngine(object):
            Get player information
         """
         return self._gameEngineCommands.info(initials)
+    
+    def team_info(self, team_name='all')->CommandResult:
+        """Displays info for a given team or all teams
+            Arguments:
+                team_name - an existing team name or 'all' (the default)
+            Returns: a CommandResult, the message contains the team info
+        """
+        return self._gameEngineCommands.team_info(team_name)
+        
+        
         

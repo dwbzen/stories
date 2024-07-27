@@ -7,9 +7,10 @@ Created on Dec 8, 2023
 from datetime import datetime
 import json
 from game.player import Player
+from game.team import Team
 from game.storiesObject import StoriesObject
 from game.gameConstants import GameParametersType, CardType, PlayerRole
-from typing import List
+from typing import List, Dict
 
 class GameState(StoriesObject):
     """Maintains the global state of a Stories game instance.
@@ -32,6 +33,7 @@ class GameState(StoriesObject):
 
         """
         self._players:List[Player] = []
+        self._teams:Dict[str,Team] = {}
         self._current_player_number = -1
         self._current_player = None
         self._total_points = total_points
@@ -62,6 +64,16 @@ class GameState(StoriesObject):
     @property
     def players(self) -> List[Player]:
         return self._players
+    
+    @property
+    def teams(self)->Dict[str,Team]:
+        return self._teams
+    
+    def get_team(self, name)->Team|None:
+        team = None
+        if name in self.teams:
+            team = self.teams[name]
+        return team
     
     @property
     def winning_player(self) -> Player:
@@ -219,6 +231,12 @@ class GameState(StoriesObject):
         aplayer.number = self.number_of_players()     # starts at 0
         self._players.append(aplayer)
         return aplayer.number
+
+    def add_team(self, team:Team)->bool:
+        added = team.name not in self._teams
+        if added:
+            self._teams[team.name] = team
+        return added
     
     def get_player_by_initials(self, initials):
         player = None
@@ -246,7 +264,7 @@ class GameState(StoriesObject):
             Returns:
                 List[Player] who have that role in the given team
         """
-        players = [p for p in self.players if p.player_role is role and p.team_name == team_name]
+        players = [p for p in self.players if p.player_role is role and p.my_team_name == team_name]
         return players
     
     def get_all_team_members(self, team_name)->List[Player]:
@@ -256,7 +274,7 @@ class GameState(StoriesObject):
             Returns:
                 List[Player] in the given team. Could be an empty list if the team doesn't exist or has no members.
         """
-        players = [p for p in self.players if p.team_name == team_name]
+        players = [p for p in self.players if p.my_team_name == team_name]
         return players
 
     def to_JSON(self):
@@ -280,6 +298,13 @@ class GameState(StoriesObject):
         for player in self.players:
             players.append(player.to_dict())
         gs["players"] = players
+        if len(self.teams) > 0:
+            tlist = []
+            for tname in self.teams.keys():
+                team = self.teams[tname]
+                tlist.append(team.to_dict())
+            gs["teams"] = tlist
+            
         return gs
 
         

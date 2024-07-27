@@ -197,6 +197,8 @@ class Player(StoriesObject):
             In a collaborative game all the players maintain their own hand, 
             but the player with the DIRECTOR PlayerRole maintains the common story.
             
+            Note - When inserting a TITLE, OPENING or CLOSING story element, the existing one (if it exists) is replaced.
+            
         """
         assert(card is not None)
         card_number = card.number if isinstance(card, StoryCard) else card
@@ -273,8 +275,13 @@ class Player(StoriesObject):
 
         return CommandResult(return_code, message, done_flag)
         
-    def info(self):
-        return  f' "name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}", "id":"{self.player_id}" "role": {self.player_role.value}'
+    def info(self)->str:
+        msg = f'"name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}", "id":"{self.player_id}" "role": {self.player_role.value}'
+        return f"{msg}\n{self.stats()}"
+
+    def stats(self)->str:
+        msg = ", ".join([f"{x.value}: {self.story_elements_played[x]}" for x in self.story_elements_played])
+        return f"story elements played: {msg}"
 
     def to_dict(self):
         pdict = {"name" : self.player_name, "number" : self.number, "initials" : self.player_initials}

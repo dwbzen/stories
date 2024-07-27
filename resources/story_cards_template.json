@@ -4,7 +4,7 @@
 		"Title", "Opening", "Opening/Story", "Story", "Closing", "Action"
 	],
 	"action_types_list" : [
-		"meanwhile", "draw_new", "trade_lines", "steal_lines", "stir_pot", "change_name", "reorder_lines", "compose"
+		"meanwhile", "draw_new", "trade_lines", "steal_lines", "stir_pot", "change_name", "reorder_lines", "compose", "call_in_favors"
 	],
 	"characters" : [ "Michael", "Nick", "Samantha", "Vivian" ],
 	"commands" : [ "add", "discard", "draw", "done", "end", "help", "info", "insert", "list", "ln", "ls", "next", "pass", "play", "rank", "read", "replace", "rn", "show", "status", "swap" ],
@@ -84,7 +84,7 @@
 		},
 		{
 			"action_type" : "trade_lines",
-			"Help" : "Trade an Opening or Story element that has been played with that from another player's story.",
+			"Help" : "Trade any story element that has been played with that from another player's story.",
 			"example" : "N/A",
 			"text" : "Trade Line",
 			"min_arguments" : 2,
@@ -141,6 +141,16 @@
 			"max_arguments" : 99,
 			"story_element" : 0,
 			"quantity" : 4
+		},
+		{
+			"action_type" : "call_in_favors",
+			"Help" : "Select one card at random from all other players. In team play, select a random card from each player in other teams. Not valid in a collaborative game.",
+			"example" : "N/A",
+			"text" : "Select one card at random from all other players.",
+			"min_arguments" : 0,
+			"max_arguments" : 0,
+			"story_element" : 0,
+			"quantity" : 2
 		}
 	],
 	"cards" : {

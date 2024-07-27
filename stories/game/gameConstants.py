@@ -57,6 +57,7 @@ class ActionType(Enum):
     CHANGE_NAME = "change_name"
     REORDER_LINES = "reorder_lines"
     COMPOSE = "compose"
+    CALL_IN_FAVORS = "call_in_favors"
     
 class PlayMode(Enum):
     INDIVIDUAL = "individual"
@@ -64,7 +65,7 @@ class PlayMode(Enum):
     COLLABORATIVE = "collaborative"
     
 class PlayerRole(Enum):
-    PLAYER = "player"               # INDIVIDUAL PlayMode
+    PLAYER = "player"               # INDIVIDUAL or COLLABORATIVE PlayMode 
     TEAM_MEMBER = "team_member"     # TEAM PlayMode
     TEAM_LEAD = "team_lead"         # TEAM PlayMode
     DIRECTOR = "director"           # COLLABORATIVE PlayMode
@@ -74,11 +75,11 @@ class GameConstants(object):
     Define global constants
     '''
     COMMANDS = [
-            'add', 'deal', 'discard', 'done', 'draw', 'end', 
+            'add', 'add_team', 'deal', 'discard', 'done', 'draw', 'end', 
             'game_status', 'help', 'info', 'insert', 
             'list', 'list_numbered', 'ln', 'log_message', 'ls', 
             'next', 'play', 'play_type', 'rank', 'read', 'rn', 'replace',
-            'save', 'set', 'show', 'start', 'status' ]
+            'save', 'set', 'show', 'start', 'status', 'team_info', 'update' ]
     
     CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files
     CARD_TYPES = [CardType.ACTION, CardType.TITLE, CardType.OPENING, CardType.OPENING_STORY, CardType.STORY, CardType.CLOSING]

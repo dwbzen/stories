@@ -22,7 +22,8 @@ __all__ = [
     'storiesGame',
     'storyCard',
     'storyCardHand',
-    'storyCardList'
+    'storyCardList',
+    'team'
 ]
 from .storiesObject import StoriesObject
 from .gameConstants import GameConstants, GameParametersType, GenreFilenames
@@ -42,6 +43,7 @@ from .gameRunner import GameRunner
 from .gameState import GameState
 from .gameUtils import GameUtils
 from .player import Player
+from .team import Team
 from .logger import Logger
 
 from .storiesGame import StoriesGame

@@ -173,17 +173,18 @@ class StoryCardList(StoriesObject):
         deck_dict = {"cards" : cards}
         return deck_dict
     
-    def to_string(self, numbered:bool=True)->str:
+    def to_string(self, numbered:bool=False)->str:
+        """
+        """
         if self.size() == 0: card_text = ""
-        elif self.size() == 1: card_text = self._cards[0].text    # Title card only
         else:
             card_text_list = []
             n = 0
             for card in self._cards:
-                if not numbered:    #card.card_type is CardType.TITLE or card.card_type is CardType.CLOSING or
-                    txt = card.text
+                if numbered:
+                    txt = f"{n}. ({card.card_type.value}) {card.text}" 
                 else:
-                    txt = f"{n}. {card.text}"
+                    txt = card.text
                     
                 card_text_list.append(txt)
                 n += 1

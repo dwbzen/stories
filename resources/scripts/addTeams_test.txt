@@ -1,32 +1,21 @@
-# creates a collaborative Stories game and adds 4 players 
+# creates a team Stories game and adds 4 players to 2 teams
 # name, initials, player_id, email : the player_id is the same as the name
 # A sample command line to run this script file is:
-# --loglevel debug --genre horror --params test --delay 1 --script  <project_root>/resources/scripts/addPlayer_test.txt
-#
+# --loglevel debug --genre horror --params test --delay 1 --script  <project_root>/resources/scripts/addPlayer_teams_test.txt
 # <project_root> is the git folder, for example /Users/dwbze/OneDrive/Documents/Compile/stories/
+#
 #
 add player Don DWB Don dwbzen@gmail.com
 add player Brian BDB Brian brian.bacon01@gmail.com;add player Beth EJB Beth beth@gmail.com;add player Cheryl CJL Cheryl lister.cheryl@gmail.com
+#
+# Add the teams. Syntax is: add_team <team name> <list of player initials>
+# The first player listed in the default team lead
+#
 start game
-add director Brian BDB
-# DWB
-draw
-status
-ln
-next
-# BDB
-draw
-ln
-next
-# EJB
-draw
-ln
-next
-#CJL
-draw
-ln
-next
-# DWB
+add_team Team_Cheryl cjl,dwb
+add_team Team_Brian bdb,ejb
+game_status
+#
 # optionally end the game
 game_status
 # end game

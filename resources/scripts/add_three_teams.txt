@@ -1,0 +1,34 @@
+#
+# creates a team Stories game and adds 3 players each to 3 teams
+# name, initials, player_id, email : the player_id is the same as the name
+# A sample command line to run this script file is:
+# --loglevel debug --genre horror --params test --delay 1 --script  <project_root>/resources/scripts/add_three_teams.txt
+# <project_root> is the git folder, for example /Users/dwbze/OneDrive/Documents/Compile/stories/
+#
+# Add players in order of play - team leads first
+#
+add player Don DWB Don dwbzen@gmail.com;
+add player Brian BDB Brian brian.bacon01@gmail.com;
+add player Scott SFP Scott scott123@gmail.com;
+#
+add player Cheryl CJL Cheryl lister.cheryl@gmail.com;
+add player Beth EJB Beth beth@gmail.com;
+add player Kyong KPP Nana kyong@gmail.com;
+#
+add player Karen KKB Karen karen123@gmail.com
+add player Shawn SRB Shawn sbacon503@gmail.com
+add player Aaron APJ Aaron judge.aaron@yankees.com
+#
+#
+# Add the teams. Syntax is: add_team <team name> <list of player initials>
+# The first player listed in the default team lead
+#
+start game
+add_team Team_Don dwb,cjl,kkb
+add_team Team_Brian bdb,ejb,srb
+add_team Team_Scott sfp,kpp,apj
+game_status
+#
+# optionally end the game
+game_status
+# end game
