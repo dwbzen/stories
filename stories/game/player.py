@@ -198,7 +198,7 @@ class Player(StoriesObject):
             but the player with the DIRECTOR PlayerRole maintains the common story.
             
             Note - When inserting a TITLE, OPENING or CLOSING story element, the existing one (if it exists) is replaced.
-            
+            Adding a TITLE inserts it as the first line if not replacing an existing title.
         """
         assert(card is not None)
         card_number = card.number if isinstance(card, StoryCard) else card

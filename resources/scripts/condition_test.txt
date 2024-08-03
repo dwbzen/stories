@@ -1,0 +1,47 @@
+# creates a Stories game and adds 2 players 
+# name, initials, player_id, email : the player_id is the same as the name
+# A sample command line to run this script file is:
+#    --loglevel debug --genre horror --params test  --script  <project_root>/resources/scripts/addPlayer_test.txt
+# where <project_root> is the git folder, for example /Users/dwbze/OneDrive/Documents/Compile/stories/
+#
+add player Don DWB Don dwbzen@gmail.com
+add player Brian BDB Brian brian.bacon01@gmail.com
+start game
+# dwb
+draw title
+play last
+next
+# bdb
+draw title
+play last
+next
+#dwb
+draw opening
+play last
+next
+# bdb
+draw opening
+play last
+next
+#
+limit = 20;
+counter = 0;
+while counter < limit {
+	draw story
+	play last
+	next
+	counter += 1;
+}
+#dwb
+draw closing
+play last
+read
+next
+# bdb
+draw closing
+play last
+read
+next
+#
+end game
+

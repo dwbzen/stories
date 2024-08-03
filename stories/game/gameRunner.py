@@ -36,6 +36,7 @@ class GameRunner(object):
         self._total_points = total_points
         self._game_mode = game_mode 
         self._play_mode = play_mode
+        self._log_level = log_level
         debug_flag = log_level == 'debug'
         self._debug = debug_flag           # traces the action by describing each step
         self._game_engine = None           # GameEngine instance
@@ -91,6 +92,14 @@ class GameRunner(object):
     @property
     def total_points(self)->int:
         return self._total_points
+    
+    @property
+    def log_level(self)->str:
+        return self._log_level
+
+    @property
+    def debug(self)->bool:
+        return self._debug
 
     def create_game(self, game_id=None, game_mode="test") -> CommandResult:
         result = self.game_engine.create(self.installationId, self.genre, self.total_points, game_id, game_mode)
@@ -127,7 +136,7 @@ class GameRunner(object):
                 done = False
                 while not done:
                     turn_number = game_state.turn_number
-                    prompt = f'player {pn}, {current_player.player_initials}, turn={turn_number}: '
+                    prompt = f'player {i}: {pn}, {current_player.player_initials}, turn={turn_number}: '
                     cmd = input(prompt)
                     if len(cmd) == 0: continue
                     cmd_str = cmd.split(" ")
@@ -199,7 +208,7 @@ class GameRunner(object):
                 
                 elif cmd.startswith("#"):    # comment line
                     if log_comments:
-                        logging.debug(f'log_message {cmd}')
+                        logging.info(f'log_message {cmd}')
                         result = None
                     else:
                         result = None
@@ -218,18 +227,22 @@ class GameRunner(object):
                         logging.error(message)
                         
                 elif cmd.endswith("{"):   # a while loop, execute the condition with eval()
-                    condition = cmd[:-1][6:]    # assumes "while "
-                    result = CommandResult(CommandResult.SUCCESS, condition, False)
-                    try:
-                        continue_loop = eval(condition)
-                        if not continue_loop:
-                            line_number = loop_end
-                        else:
-                            loop_start = line_number
-                    except Exception as ex:
-                        message = f'"{condition}" : Invalid eval statement\nexception: {str(ex)}'
-                        result = CommandResult(CommandResult.ERROR,  message,  False, exception=ex)
-                        logging.error(message)
+                    ind = cmd.find(" ")
+                    if ind > 0:    # isolate the conditional: if, while
+                        condition = cmd[:-1][ind+1:]    # assumes "while "
+                        result = CommandResult(CommandResult.SUCCESS, condition, False)
+                        try:
+                            continue_loop = eval(condition)
+                            if not continue_loop:
+                                line_number = loop_end
+                            else:
+                                loop_start = line_number
+                        except Exception as ex:
+                            message = f'"{condition}" : Invalid eval statement\nexception: {str(ex)}'
+                            result = CommandResult(CommandResult.ERROR,  message,  False, exception=ex)
+                            logging.error(message)
+                    else:
+                        logging.warn(f"{cmd} is not a valid condition")
                         
                 elif cmd.endswith("}"):    # end of the loop
                     loop_end = line_number
@@ -242,7 +255,8 @@ class GameRunner(object):
                     turn_number += 1
                 
                 if result is not None:
-                    print(f'"{cmd}":\n {result.message}')
+                    if self.debug:
+                        print(f'"{cmd}":\n {result.message}')
                     if result.return_code == CommandResult.TERMINATE:
                         break
                     

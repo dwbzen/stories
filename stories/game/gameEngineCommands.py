@@ -320,6 +320,9 @@ class GameEngineCommands(object):
                     Otherwise CommandResult.ERROR is returned and the message has the specifics.
             Note that error checking is bypassed if the bypass_error_flags property (determined by
             the parameters file) is True.
+            
+            TODO - update for team and collaborative play modes
+            TODO - score round points based on story ranking (who came in first, second & third)
         """
 
         game_points = self.stories_game.game_parameters.game_points
@@ -333,8 +336,6 @@ class GameEngineCommands(object):
         # Try to end the current round first, then if what is "game" also end the entire game.
         # In both cases points are tallied and winner(s) are determined.
         # is ending the round valid? check the number of story cards for each player
-        #
-        # TODO - score round points based on who came in first, second & third.
         #
         for player in self.game_state.players:
             story_elements_played = player.story_elements_played    # Dict[CardType,int]
@@ -362,10 +363,42 @@ class GameEngineCommands(object):
 
         result = CommandResult(return_code, message, True)
         return result
+
+    def find(self, card_type:str, action_type:str=None)->CommandResult:
+        """Find a specific CardType in a player's hand.
+            Arguments:
+                card_type - a CardType.value - title,story,opening,closing, or action.
+                action_type - an optional ActionType.value - meanwhile, trade_lines, etc.
+            If the given card_type is found the card number (of the first instance found) is returned in
+            the ComandResult properties with the key "number". If not found the card number returned is -1.
+            If used in a script, the syntax is: num=find story
+            and used in a conditional, for example: if num>0:
+        """
+        result = CommandResult()
+        player:Player = self.game_state.current_player 
+        result = self._get_player_for_play_mode(player)    # the Player maintaining the story
+        target_player:Player = result.properties["target_player"]
+        ct = CardType[card_type.upper()]
+        at = ActionType[action_type.upper()] if action_type is not None else None
+        index = target_player.story_card_hand.cards.find_first(ct, at)
+        if index >= 0:
+            the_card = target_player.story_card_hand.cards[index]
+            result.properties = {"number":the_card.number}
+            message = f"Found card# {the_card.number} for type {card_type}"
+            if action_type is not None:
+                message = f"{message}, action type: {action_type}"
+            result.message = message
+        else:
+            result.properties = {"number":-1}
+            result.message = f"No card of type {card_type} was found"
+        return result
+        
     
     def _check_types_to_omit(self)->List[CardType]:
         """Check if all players have played a TITLE and/or OPENING story card.
             Return: List[CardType] that have been played by all players
+            
+            NOTE - due to rules change and additional ActionCard type, this is no longer needed.
         """
         omit_types:List[CardType] = []
         omit_title = True
@@ -484,8 +517,16 @@ class GameEngineCommands(object):
             
         """
         player = self.game_state.current_player
-        if isinstance(card_id, str) and card_id == "last" and player.story_card_hand.last_card_drawn_number >= 0:
-            card_number = player.story_card_hand.last_card_drawn_number
+        if isinstance(card_id, str):
+            if card_id == "last" and player.story_card_hand.last_card_drawn_number >= 0:
+                card_number = player.story_card_hand.last_card_drawn_number
+            elif card_id.startswith("#"):    # card_id is the ordinal from the listing, 1 through #cards
+                ordinal = int(card_id[1:])
+                card_number = self._get_card_number_from_list(player, ordinal)
+                if card_number < 0:
+                    message = f"Invalid line number: {ordinal}"
+                    result = CommandResult(CommandResult.ERROR, message, False)
+                    return result
         else:
             card_number = card_id
             
@@ -529,13 +570,17 @@ class GameEngineCommands(object):
             
         return result
     
-    def play_type(self, card_type:str):
-        """Draws a card of a given type and plays it
-            Used for testing only!
-            Note that this works for story element types only, not action cards.
+    def play_type(self, card_type:str, *args):
+        """Draws a card of a given type and plays it. Primary use of play_type is in scripting and testing.
+            Arguments:
+                card_type - a valid CardType
+                args - additional arguments needed for Action cards, depending on the ActionType
+            
+            Note that this works for story element types only, NOT action cards.
             For action cards, first draw the action type you want,
             for example "draw action meanwhile", then use "play last" to play the card.
-            Primary use of play_type is in scripting.
+            
+            TODO - enable playing action cards
         """
         result = self.draw(card_type, action_type=None)
         if result.is_successful():
@@ -554,6 +599,8 @@ class GameEngineCommands(object):
                 CommandResult indicating SUCCESS or ERROR
                 
             Note - When inserting a TITLE, OPENING or CLOSING story element, the existing one (if it exists) is replaced.
+            Adding a TITLE inserts it as the first line if not replacing an existing title.
+            
         """
         card_played = player.play_card(story_card)
         if card_played is None:
@@ -624,6 +671,7 @@ class GameEngineCommands(object):
             Returns:
                 CommandResult.ERROR if the card_number or line_number is invalid (doesn't exist)
                 else CommandResult.SUCCESS
+            TODO - implement how='before', currently all inserts done after (the default) a given line_number
         """
         player = self.game_state.current_player
         story_card = player.story_card_hand.get_card(card_number)
@@ -639,7 +687,7 @@ class GameEngineCommands(object):
                 result = CommandResult(CommandResult.ERROR, message, False)
         else:
             card_played = player.play_card(story_card, line_number)
-            message = f"You played {card_played.number}. {card_played.text} after line# {line_number}"
+            message = f"You played {card_played.number}. {card_played.text} {how} line# {line_number}"
             result = CommandResult(CommandResult.SUCCESS, message, True)
             
         return result
@@ -748,6 +796,17 @@ class GameEngineCommands(object):
             card_text = str(story_card_hand.cards)
             
         return card_text
+    
+    def _get_card_number_from_list(self, player, ordinal, sort_list=True):
+        """Returns the number of the card in the players hand at a given ordinal position (starting with 1)
+            Returns -1 if ordinal is out of range
+        """
+        cards = player.story_card_hand.sort() if sort_list else player.story_card_hand.cards.cards    # List[StoryCard]
+        ind = ordinal - 1
+        card_number = -1
+        if ind < len(cards):
+            card_number = cards[ind].number 
+        return card_number
     
     def show(self, what)->CommandResult:
         """Displays the top card of the discard pile
@@ -912,6 +971,9 @@ class GameEngineCommands(object):
                 In the above examples the player's name is "Brian" and his initials are "BRI"
                 In COLLABORATIVE and TEAM play mode, relevant actions are 
                 played against the director's and team lead's story respectively.
+                
+                TODO - implement REORDER_LINES, CALL_IN_FAVORS, STIR_POT
+                TODO - test STEAL_LINES, TRADE_LINES, CHANGE_NAME, COMPOSE  for individual, team and collaborative play
         """
         action_type = action_card.action_type        # ActionType
         num_args = len(args)
@@ -973,6 +1035,35 @@ class GameEngineCommands(object):
                 else:
                     message = play_result.message
                     return_code = play_result.return_code
+            
+            case ActionType.COMPOSE:
+                text = " ".join(args) + "\n"
+
+                #
+                # create a new StoryCard from the text provided, 
+                # add it to the player's hand, then play that card
+                # For teams, the card is added to the player's team lead
+                # In a collaborative game, the card is added to the game Director's hand
+                #
+                result = self._get_player_for_play_mode(player)    # the Player maintaining the story
+                target_player = result.properties["target_player"]
+                if not target_player._story_card_hand.cards.card_exists(action_card.number):
+                    #
+                    # add the COMPOSE action card to the target_player's hand
+                    #
+                    player.remove_card(action_card.number)
+                    target_player.add_card(action_card)
+                
+                action_card_played = target_player.play_card(action_card)
+                
+                genre = self.stories_game.genre
+                card_number = self.stories_game.story_card_deck.next_card_number
+                story_card = StoryCard(genre, CardType.STORY, text, card_number)
+                target_player.add_card(story_card)
+                result = self.play(card_number)
+                if result.return_code is CommandResult.SUCCESS:
+                    self.stories_game.story_card_deck.next_card_number = card_number + 1
+                message = f"You played {action_card.number}. {action_card.text} {result.message}"
                 
             case ActionType.STEAL_LINES:
                 # Steal a story card played by another player
@@ -1028,21 +1119,6 @@ class GameEngineCommands(object):
             case ActionType.CALL_IN_FAVORS:
                 message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
                 return_code = CommandResult.WARNING
-            
-            case ActionType.COMPOSE:
-                text = " ".join(args)
-                #
-                # create a new StoryCard from the text provided, 
-                # add it to the player's hand, then play that card
-                #
-                genre = self.stories_game.genre
-                card_number = self.stories_game.story_card_deck.next_card_number
-                story_card = StoryCard(genre, CardType.STORY, text, card_number)
-                player.add_card(story_card)
-                result = self.play(card_number)
-                if result.return_code is CommandResult.SUCCESS:
-                    self.stories_game.story_card_deck.next_card_number = card_number + 1
-                message = f"You played {action_card.number}. {action_card.text} {result.message}"
                     
             case ActionType.STIR_POT:
                 # Each player selects a story element from their deck and passes it to the person to their left

@@ -1,7 +1,7 @@
 # creates a collaborative Stories game and adds 4 players 
 # name, initials, player_id, email : the player_id is the same as the name
 # A sample command line to run this script file is:
-# --loglevel debug --genre horror --params test --delay 1 --script  <project_root>/resources/scripts/addPlayer_test.txt
+# --loglevel debug --genre horror --params test --delay 1 --playmode collaborative  --script  <project_root>/resources/scripts/addPlayer_test.txt
 #
 # <project_root> is the git folder, for example /Users/dwbze/OneDrive/Documents/Compile/stories/
 #
@@ -10,21 +10,24 @@ add player Brian BDB Brian brian.bacon01@gmail.com;add player Beth EJB Beth beth
 start game
 add director Brian BDB
 # DWB
-draw
-status
-ln
+draw title
+play last
+read
 next
 # BDB
-draw
-ln
+draw opening
+play last
+rn
 next
 # EJB
-draw
-ln
+draw story
+play last
+read
 next
 #CJL
-draw
-ln
+draw closing
+play last
+rn
 next
 # DWB
 # optionally end the game

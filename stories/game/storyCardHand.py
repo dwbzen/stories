@@ -137,10 +137,19 @@ class StoryCardHand(StoriesObject):
                         self._my_story_cards.cards[type_ind] = card
                         self.discards.add_card(current_card)
                         self.remove_card(current_card.number)
-                        return card
-                if card.story_element:
+                    elif card.card_type is CardType.TITLE:
+                        # a new TITLE is inserted as the first line
+                        self._my_story_cards.insert_card(0, card)
+                    else:
+                        self._my_story_cards.add_card(card)
+
+                #
+                # STORY or OPENING_STORY card types
+                #
+                elif card.story_element:
                     self._my_story_cards.add_card(card)
-                self._cards.remove(ind)
+                    
+            self._cards.remove(ind)
         return card
     
     def get_card(self, card_number:str|int)->StoryCard|None:

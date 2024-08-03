@@ -6,7 +6,7 @@ Created on Dec 26, 2023
 
 from game.storyCard import StoryCard
 from game.storiesObject import StoriesObject
-from game.gameConstants import CardType
+from game.gameConstants import CardType, ActionType
 from typing import List, Dict
 import json
 from collections.abc import Iterator
@@ -95,19 +95,24 @@ class StoryCardList(StoriesObject):
     def find_card(self, card_number:int)->StoryCard|None:
         return self._cards[self.index_of(card_number)] if self.card_exists(card_number) else None
     
-    def find_first(self, card_type:CardType)->int:
+    def find_first(self, card_type:CardType, action_type:ActionType=None)->int:
         """Finds the index of first instance of a given CardType in cards
             and returns its index, or -1 if not found
         """
         ind = 0
         index = -1
         for card in self._cards:
-            if card.card_type is card_type:
+            found = card.card_type is card_type and (action_type is None or card.action_type is action_type)
+            if found: 
                 index = ind
                 break
             else:
                 ind+=1
         return index
+    
+    def find_first_card(self, card_type:CardType, action_type:ActionType=None)->StoryCard|None:
+        index = self.find_first(card_type, action_type)
+        return self.cards[index] if index >= 0 else None
     
     def find_inactive(self)->int:
         """Finds the index of the first inactive StoryCard in cards,

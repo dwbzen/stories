@@ -76,7 +76,7 @@ class GameConstants(object):
     '''
     COMMANDS = [
             'add', 'add_team', 'deal', 'discard', 'done', 'draw', 'end', 
-            'game_status', 'help', 'info', 'insert', 
+            'find', 'game_status', 'help', 'info', 'insert', 
             'list', 'list_numbered', 'ln', 'log_message', 'ls', 
             'next', 'play', 'play_type', 'rank', 'read', 'rn', 'replace',
             'save', 'set', 'show', 'start', 'status', 'team_info', 'update' ]

@@ -292,8 +292,10 @@ class StoriesGameEngine(object):
         # determine the winner, save the game if specified
         #
         result = self._gameEngineCommands.end(what)
-
         return result
+    
+    def find(self, card_type:str, action_type:str=None)->CommandResult:
+        return self._gameEngineCommands.find(card_type, action_type)
     
     def done(self)-> CommandResult:
         """End the current player's turn and go to the next player.

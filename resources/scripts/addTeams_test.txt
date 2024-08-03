@@ -6,7 +6,7 @@
 #
 #
 add player Don DWB Don dwbzen@gmail.com
-add player Brian BDB Brian brian.bacon01@gmail.com;add player Beth EJB Beth beth@gmail.com;add player Cheryl CJL Cheryl lister.cheryl@gmail.com
+add player Brian BDB Brian brian.bacon01@gmail.com;add player Cheryl CJL Cheryl lister.cheryl@gmail.com;add player Beth EJB Beth beth@gmail.com
 #
 # Add the teams. Syntax is: add_team <team name> <list of player initials>
 # The first player listed in the default team lead

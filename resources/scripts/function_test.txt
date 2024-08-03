@@ -1,0 +1,19 @@
+#
+#  A sample command line to run this script file is:
+#   --loglevel info --genre horror --params test  --script  /Users/dwbze/OneDrive/Documents/Compile/stories/resources/scripts/function_test.txt
+#
+add player Don DWB Don dwbzen@gmail.com
+add player Brian BDB Brian brian.bacon01@gmail.com
+start game
+#
+import random;
+# draw some random numbers
+limit = 20;
+counter = 0;
+while counter < limit {
+ x=random.randint(1,12);
+ print(f"x={x}");
+ counter += 1;
+}
+#
+end game
