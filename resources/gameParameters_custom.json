@@ -5,6 +5,8 @@
 	"bypass_error_checks" : 0,
 	"randomize_picks" : 1,
 	"story_length" : 10,
+	"max_cards_in_hand": 10,
+	"automatic_draw": 0,
 	"round_points" : {"1" : 5, "2" : 3, "3" : 1, "4" : 0},
 	"character_alias" : {"Michael" : "Don", "Nick" : "David", "Samantha" : "Cheryl", "Vivian" : "Amanda"}
 }

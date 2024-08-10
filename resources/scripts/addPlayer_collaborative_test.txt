@@ -6,9 +6,12 @@
 # <project_root> is the git folder, for example /Users/dwbze/OneDrive/Documents/Compile/stories/
 #
 add player Don DWB Don dwbzen@gmail.com
-add player Brian BDB Brian brian.bacon01@gmail.com;add player Beth EJB Beth beth@gmail.com;add player Cheryl CJL Cheryl lister.cheryl@gmail.com
-start game
+add player Brian BDB Brian brian.bacon01@gmail.com
+add player Beth EJB Beth beth@gmail.com
+add player Cheryl CJL Cheryl lister.cheryl@gmail.com
 add director Brian BDB
+start game
+
 # DWB
 draw title
 play last
@@ -25,11 +28,12 @@ play last
 read
 next
 #CJL
-draw closing
+draw story
 play last
 rn
 next
 # DWB
+draw action compose
 # optionally end the game
 game_status
-# end game
+end game

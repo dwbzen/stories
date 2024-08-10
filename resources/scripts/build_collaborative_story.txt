@@ -1,0 +1,40 @@
+# creates a collaborative Stories game with one player who is the director
+add player Don DWB Don dwbzen@gmail.com
+add director Don DWB
+start game
+
+# DWB
+# director can add players
+add player Brian BDB Brian brian.bacon01@gmail.com
+add player Beth EJB Beth beth@gmail.com
+add player Cheryl CJL Cheryl lister.cheryl@gmail.com
+# dwb
+draw title
+play last
+next
+# bdb
+draw opening
+play last
+next
+# ejb
+draw story
+play last
+next
+# cjl
+draw story
+play last
+next
+#
+limit = 20;
+counter = 0;
+while counter < limit {
+	draw story
+	play last
+	next
+	counter += 1;
+}
+#dwb
+draw closing
+play last
+read
+end game

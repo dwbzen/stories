@@ -11,9 +11,11 @@ from game.gameState import GameState
 from game.player import Player
 from game.team import Team
 from game.storyCard import StoryCard
+from game.storyCardList import StoryCardList
 
 from typing import List
 import logging, json
+from game.gameParameters import GameParameters
 
 class GameEngineCommands(object):
     """Implementation of StoriesGame player commands.
@@ -31,6 +33,7 @@ class GameEngineCommands(object):
         self._debug = False
         self._game_id = stories_game.game_id
         self._play_mode = self._stories_game.play_mode
+        self._game_parameters = self._stories_game.game_parameters
     
     @property
     def stories_game(self)->StoriesGame:
@@ -47,6 +50,10 @@ class GameEngineCommands(object):
     @property
     def play_mode(self)->PlayMode:
         return self._play_mode
+    
+    @property
+    def game_parameters(self)->GameParameters:
+        return self._game_parameters
         
     @property
     def debug(self):
@@ -151,7 +158,7 @@ class GameEngineCommands(object):
             This simply returns the negative of that value.
             @see GameParameters
         """
-        return self.stories_game.check_errors()
+        return not self.game_parameters.bypass_error_checks
     
     #####################################
     #
@@ -279,32 +286,20 @@ class GameEngineCommands(object):
     
     def done(self)-> CommandResult:
         """Complete the current player's turn
-            At the end of the last player's turn, check if all players have
-            played a TITLE and/or OPENING story card.
-            If so, add the CardType(s) to the GameState types_to_omit.
-            So on subsequent draws these card types are skipped.
+
         """
         current_player = self.game_state.current_player
-        omit_types = []
+
         check_errors = self.check_errors()   # check for errors?
-        if current_player.number == self.game_state.number_of_players() - 1:    # If I am the last player
-            omit_types = self._check_types_to_omit()
-        result = current_player.end_turn(check_errors)
+        max_cards = self.game_parameters.max_cards_in_hand
+        result = current_player.end_turn(check_errors, max_cards)
         if result.return_code is CommandResult.SUCCESS:
             npn = self.game_state.set_next_player()
             next_player = self.game_state.current_player
-            message = f"{result.message}. {next_player.player_initials}'s turn, player# {npn}."
+            result.message = f"{result.message}. {next_player.player_initials}'s turn, player# {npn}."
         else:
-            message = result.message
-        if len(omit_types) > 0:
-            self.game_state.add_card_types_to_omit(omit_types)
-            msg = ",".join([x.value for x in omit_types])
-            message = f"{message}\nCard types omitted from future draws: {msg}"
-            #
-            # remove cards having a card type in types_to_omit 
-            # from the current_player's (the player whose turn is done) hand and replace with new cards
-            #
-            msg = self._update_player_hand(current_player, omit_types)
+            pass
+
         return result
     
     def end(self, what:str) ->CommandResult:
@@ -324,10 +319,9 @@ class GameEngineCommands(object):
             TODO - update for team and collaborative play modes
             TODO - score round points based on story ranking (who came in first, second & third)
         """
-
-        game_points = self.stories_game.game_parameters.game_points
-        story_length = self.stories_game.game_parameters.story_length
-        bypass_error_checks = self.stories_game.game_parameters.bypass_error_checks
+        game_points = self.game_parameters.game_points
+        story_length = self.game_parameters.story_length
+        bypass_error_checks = self.game_parameters.bypass_error_checks
         return_code = CommandResult.SUCCESS
         message = ""
         winner:Player = None
@@ -353,11 +347,13 @@ class GameEngineCommands(object):
                 # looks good!
                 message = f"{message} Player: {player.player_initials} played cards: {pm}\n "
             else:    # something missing
-                message = f"{message} Player: {player.player_initials} has not played necessary cards: {pm}\n "
+                message = f"{message} Player: {player.player_initials} has not played necessary story elements: {pm}\n "
                 return_code = CommandResult.ERROR
                     
         if return_code is CommandResult.SUCCESS:
-            message = f"The {what} is over and the winner with {winner.points} is {winner.player_initials}"
+            message = f"The {what} is over!"
+            if self.play_mode is not PlayMode.COLLABORATIVE:
+                message = f"{message} and the winner with {winner.points} points is {winner.player_initials}"
             if what == "game":
                 return_code = CommandResult.TERMINATE
 
@@ -513,7 +509,9 @@ class GameEngineCommands(object):
             If the CommandResult is successful, the StoryCard instance is returned
             in the result properties with key "story_card_played"
             
-            Note - When inserting a TITLE, OPENING or CLOSING story element, the existing one (if it exists) is replaced.
+            Notes - When inserting a TITLE, OPENING or CLOSING story element, the existing one (if it exists) is replaced.
+            In a collaborative PlayMode, if the automated_draw configuration parameter is True,
+            then after the card is played a new card is drawn automatically.
             
         """
         player = self.game_state.current_player
@@ -567,6 +565,9 @@ class GameEngineCommands(object):
                 
         if result.is_successful():
             result.properties = {"story_card_played":story_card}
+            if self.stories_game.game_parameters.automatic_draw and self.play_mode is PlayMode.COLLABORATIVE:
+                draw_result = self.draw(what="new", action_type=None)
+                result.message = f"{result.message} {draw_result.message}"
             
         return result
     
@@ -637,7 +638,7 @@ class GameEngineCommands(object):
             
         return result
     
-    def _get_team_lead(self, team_name:str):
+    def _get_team_lead(self, team_name:str)->CommandResult:
         """Finds and returns the team lead for a given team
             Arguments:
                 team_name - the name of an existing team
@@ -661,6 +662,30 @@ class GameEngineCommands(object):
             result = CommandResult(CommandResult.ERROR, "No team leads in a non-Team game", False)
         
         return result
+    3
+    def _get_story_cards(self, player:Player)->StoryCardList:
+        target_player = player
+        story_cards = []
+        if self._play_mode is PlayMode.TEAM:
+            team_name = player.my_team_name
+            result = self._get_team_lead(team_name)
+            if result.return_code == CommandResult.SUCCESS:
+                target_player = result.properties["team_lead"]
+                story_cards = target_player.story_card_hand.my_story_cards
+            else:
+                self._log_error(result.message)
+                
+        elif self._play_mode is PlayMode.COLLABORATIVE:
+            result = self._get_director()
+            if result.return_code == CommandResult.SUCCESS:
+                target_player = result.properties["director"]
+                story_cards = target_player.story_card_hand.my_story_cards
+            else:
+                self._log_error(result.message)
+        else:    # PlayMode.INDIVIDUAL
+            story_cards = target_player.story_card_hand.my_story_cards
+        return story_cards
+        
                     
     def insert(self, line_number:int, card_number:int, how="after" )->CommandResult:
         """Insert a story card into your current story.
@@ -973,7 +998,7 @@ class GameEngineCommands(object):
                 played against the director's and team lead's story respectively.
                 
                 TODO - implement REORDER_LINES, CALL_IN_FAVORS, STIR_POT
-                TODO - test STEAL_LINES, TRADE_LINES, CHANGE_NAME, COMPOSE  for individual, team and collaborative play
+                TODO - test STEAL_LINES, TRADE_LINES  for individual, team and collaborative play
         """
         action_type = action_card.action_type        # ActionType
         num_args = len(args)
@@ -987,7 +1012,7 @@ class GameEngineCommands(object):
         # check number of arguments is within range
         #
         if num_args < min_args or num_args > max_args:
-            message = f"{action_card.action_type} requires from {min_args} to {max_args} additional card numbers."
+            message = f"{action_card.action_type} requires from {min_args} to {max_args} additional card numbers. You specified {num_args}"
             return self._log_error(message)
 
         return_code = CommandResult.SUCCESS
@@ -1012,10 +1037,10 @@ class GameEngineCommands(object):
                         break
             
             case ActionType.MEANWHILE:    # requires an additional card to come after the "Meanwhile, "
-                num = int(args[0])
-                story_card = player.story_card_hand.get_card(num)
+                card_number = int(args[0])
+                story_card = player.story_card_hand.get_card(card_number)
                 if story_card is None:
-                    message = f"You are not holding a card with number {num}"
+                    message = f"You are not holding a card with number {card_number}"
                     return self._log_error(message)
                 
                 result = self._get_player_for_play_mode(player)    # the Player maintaining the story
@@ -1028,7 +1053,7 @@ class GameEngineCommands(object):
                     target_player.add_card(action_card)
                 
                 action_card_played = target_player.play_card(action_card)
-                play_result:CommandResult = self.play(num)
+                play_result:CommandResult = self.play(card_number)
                 if play_result.is_successful():
                     story_card_played = play_result.properties["story_card_played"]
                     message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
@@ -1055,11 +1080,12 @@ class GameEngineCommands(object):
                     target_player.add_card(action_card)
                 
                 action_card_played = target_player.play_card(action_card)
-                
+                # create a new StoryCard for the bespoke text
                 genre = self.stories_game.genre
                 card_number = self.stories_game.story_card_deck.next_card_number
                 story_card = StoryCard(genre, CardType.STORY, text, card_number)
-                target_player.add_card(story_card)
+                
+                player.add_card(story_card)
                 result = self.play(card_number)
                 if result.return_code is CommandResult.SUCCESS:
                     self.stories_game.story_card_deck.next_card_number = card_number + 1
@@ -1136,7 +1162,8 @@ class GameEngineCommands(object):
                 # requires 2 or 3 arguments: the story line number to change
                 # up to 2 changes, each formatted as <before>/<after>
                 #
-                story_cards = player.story_card_hand.my_story_cards
+                
+                story_cards = self._get_story_cards(player)
                 nlines = story_cards.size()
                 nargs = len(args)
                 story_card = None

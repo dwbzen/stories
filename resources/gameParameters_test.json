@@ -4,7 +4,9 @@
 	"game_points" : 20,
 	"bypass_error_checks" : 1,
 	"randomize_picks" : 0,
-	"story_length" : 10,
+	"story_length" : 4,
+	"max_cards_in_hand": 10,
+	"automatic_draw": 1,
 	"round_points" : {"1" : 5, "2" : 3, "3" : 1, "4" : 0},
 	"character_alias" : {"Michael" : "Don", "Nick" : "Brian", "Samantha" : "Cheryl", "Vivian" : "Beth"}
 }

@@ -27,6 +27,9 @@ class GameParameters(object):
                             for example when passing a card to the player's left in "stir_pot" action,
                             a random pick is done automatically.
         "character_aliases" - a dict of alias names to use in place of the standard names of Michael, Nick, Samantha, and Vivian.
+        "max_cards_in_hand" - the maximum number of cards that can be held in a player's hand.
+        "automatic_draw" - bool, if True then after a player plays a card from their hand, a new card is drawn automatically.
+                            Otherwise the player must issue a 'draw' command.
     '''
 
 
@@ -41,6 +44,8 @@ class GameParameters(object):
         self._bypass_error_checks = params.get("bypass_error_checks", 0) == 1
         self._randomize_picks = params.get("randomize_picks", 0) == 1
         self._round_points:Dict[str,int] = params.get("round_points", {"1" : 5, "2" : 3, "3" : 1, "4" : 0})
+        self._max_cards_in_hand = params.get("max_cards_in_hand", 10)
+        self._automatic_draw = params.get("automatic_draw", 0) == 1
         
     def game_parameters(self):
         return self._game_parameters
@@ -92,4 +97,15 @@ class GameParameters(object):
     def round_points(self)->Dict[str,int]:
         return self._round_points
     
+    @property
+    def max_cards_in_hand(self)->int:
+        return self._max_cards_in_hand
+    
+    @max_cards_in_hand.setter
+    def max_cards_in_hand(self, val):
+        self._max_cards_in_hand = val
+        
+    @property
+    def automatic_draw(self)->bool:
+        return self._automatic_draw
     

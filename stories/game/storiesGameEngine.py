@@ -268,6 +268,8 @@ class StoriesGameEngine(object):
             message = f'Starting game {self.game_id}, round 1'
         else:    # "round"
             message = f'Starting round {1 + self._game_state.round}'
+        
+        # TODO verify that a collaborative game has a Director, and each team in a team game has a team lead
 
         self.log_info(message)
         self._game_state.set_next_player()    # sets the player number to 0 and the curent_player Player reference
@@ -390,6 +392,12 @@ class StoriesGameEngine(object):
         """Alias for 'list hand me numbered'
         """
         return self.list(what, initials, how)
+    
+    def set(self, what:str, val)->CommandResult:
+        """Set a configuration parameter
+        TODO
+        """
+        return CommandResult(CommandResult.SUCCESS, "TODO")
     
     def show(self, what="discard")->CommandResult:
         """Displays the top card of the discard pile OR story elements

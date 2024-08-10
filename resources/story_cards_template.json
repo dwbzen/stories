@@ -137,7 +137,7 @@
 			"Help" : "Add a bespoke line, written by you, to your story.",
 			"example" : "play 107 'She new it was a mistake!' Play action card #106 adding a new line to the story.",
 			"text" : "Compose a new story line",
-			"min_arguments" : 2,
+			"min_arguments" : 1,
 			"max_arguments" : 99,
 			"story_element" : 0,
 			"quantity" : 4

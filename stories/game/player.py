@@ -25,6 +25,7 @@ class Player(StoriesObject):
         self._player_initials = initials            # unique initials - no player can have the same initials
         self._player_id = player_id
         self._player_email = email
+        self._phone:str = None
         self._game_id = game_id
         self._player_role = player_role
         self._my_team_name = None
@@ -103,6 +104,16 @@ class Player(StoriesObject):
     @player_role.setter
     def player_role(self, role:PlayerRole):
         self._player_role = role
+        
+    @property
+    def phone(self)->str:
+        """A player's mobile cell phone number
+        """ 
+        return self._phone
+    
+    @phone.setter
+    def phone(self, num:str):
+        self._phone = num
         
     @property
     def my_team_name(self)->str:
@@ -252,7 +263,7 @@ class Player(StoriesObject):
             
         return card_discarded
         
-    def end_turn(self, check_errors:bool)->CommandResult:
+    def end_turn(self, check_errors:bool, max_cards:int)->CommandResult:
         """Cleanup and check for errors after my turn
             Arguments:
                 check_errors - if True, check for errors: too many cards in hand, not drawn a card
@@ -267,11 +278,15 @@ class Player(StoriesObject):
             if self.num_cards_played == 0 and self.num_cards_discarded == 0:
                 return_code = CommandResult.ERROR
                 message = f"{message} You must play at least 1 card or discard 1 card."
+            if self.story_card_hand.cards.size() > max_cards:
+                return_code = CommandResult.ERROR
+                message = f"{message} You have too many cards in your hand. You must play at least 1 card or discard 1 card."
         else:
             done_flag = True
             self.num_cards_played = 0
             self.num_cards_discarded = 0
             self.card_drawn = False
+            message = "Turn over"
 
         return CommandResult(return_code, message, done_flag)
         
