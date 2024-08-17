@@ -1,5 +1,6 @@
 {
-	"description" : "Default game parameters",
+	"Title" : "Custom", 
+	"description" : "Custom game parameters",
 	"date_format" : "yyyy-dd-mm",
 	"game_points" : 20,
 	"bypass_error_checks" : 0,
@@ -8,5 +9,9 @@
 	"max_cards_in_hand": 10,
 	"automatic_draw": 0,
 	"round_points" : {"1" : 5, "2" : 3, "3" : 1, "4" : 0},
-	"character_alias" : {"Michael" : "Don", "Nick" : "David", "Samantha" : "Cheryl", "Vivian" : "Amanda"}
+	"character_alias" : {"Michael" : "Don", "Nick" : "David", "Samantha" : "Cheryl", "Vivian" : "Amanda"},
+	"OPENAI_API_KEY": "sk-proj-NEh7zOGG9TJGlJ7JrpQ7T3BlbkFJ9VOav5yZMPpCwuLQpwnc",
+	"DB_URL" : "mongodb://localhost:27017/",
+	"DB_NAME" : "stories",
+	"DB_NAME_GENRES" : "genres"
 }

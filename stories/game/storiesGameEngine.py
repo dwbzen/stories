@@ -12,8 +12,9 @@ from game.environment import Environment
 from game.gameState import GameState
 from game.logger import Logger
 from game.gameUtils import GameUtils
-from game.gameConstants import GenreType, GameConstants, CardType, ActionType, PlayMode, PlayerRole
+from game.gameConstants import GenreType, GameConstants, CardType, ActionType, PlayMode, PlayerRole, ParameterType
 from game.gameEngineCommands import GameEngineCommands
+from game.gameParameters import GameParameters
 
 from datetime import datetime
 import random, json
@@ -222,6 +223,10 @@ class StoriesGameEngine(object):
     def game_state(self)->GameState:
         return self._game_state
     
+    @property
+    def game_parameters(self)->GameParameters:
+        return self._game_parameters
+    
     def create(self, installationId:str, genre:str, total_points:int, play_mode:PlayMode, game_parameters_type="test") -> CommandResult:
         """Create a new StoriesGame for a given genre.
             Initialize GameEngineCommands
@@ -231,6 +236,7 @@ class StoriesGameEngine(object):
         self._game_state = self._stories_game.game_state
         self._game_state.game_id = self._game_id
         self._play_mode = play_mode
+        self._game_parameters = self._stories_game.game_parameters
         
         # initialize GameEngineCommands
         self._gameEngineCommands = GameEngineCommands(self._stories_game)
@@ -393,11 +399,39 @@ class StoriesGameEngine(object):
         """
         return self.list(what, initials, how)
     
-    def set(self, what:str, val)->CommandResult:
-        """Set a configuration parameter
-        TODO
+    def set(self, what:str, val:str)->CommandResult:
+        """Set a game configuration parameter. 
+        Arguments: 
+            what -"player" OR  the parameter to set. The following game parameters are supported:
+                bypass_error_checks - boolean 0 or 1 
+                story_length - int >= 4
+                max_cards_in_hand - range(5, 16)
+                automatic_draw - boolean 0 or 1
+                character_alias - dict. Keys must be in ["Michael", "Nick", "Samantha", "Vivian" ]
+             val - the value to set, subject to the above conditions.
+                If what is "player", val has the format  [ <player_initials> | <player_number> ].<attribute>=<value>
+                where <attribute> is in [ "name", "initials", "email", "phone" ]
+                For example, set bdb.phone=5855551212
+            
+        In a collaborative or team game, only the director or a team lead may execute this command.
         """
-        return CommandResult(CommandResult.SUCCESS, "TODO")
+        result = CommandResult()
+        player = self.game_state.current_player
+        if what in self.game_parameters.settable_parameter_names:
+            if player.player_role is PlayerRole.DIRECTOR or player.player_role is PlayerRole.TEAM_LEAD:
+                parameter_type = ParameterType[what.upper()]
+                result = self._gameEngineCommands.set(player, parameter_type, val)
+            else:
+                result.return_code = CommandResult.ERROR
+                result.message = f"Not authorized to use the 'set' command."
+        elif what.lower() == "player":
+            result = self._gameEngineCommands.set_player_property(player, val)
+        else:
+            # no such parameter
+            result.return_code = CommandResult.ERROR
+            result.message = f"Unknown parameter: {what}"
+        
+        return result
     
     def show(self, what="discard")->CommandResult:
         """Displays the top card of the discard pile OR story elements

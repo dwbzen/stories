@@ -1,6 +1,6 @@
 {
-	"Title" : "Story Card Template Prod",
-	"Help" : "Template story card deck.",
+	"Title" : "Story Card Template Test",
+	"Help" : "Template story card deck for testing.",
 	"card_types_list" : [
 		"Title", "Opening", "Opening/Story", "Story", "Closing", "Action"
 	],
@@ -154,7 +154,7 @@
 			"quantity" : 2
 		}
 	],
-	"Help" : "Examples lines for illustration only. Game cards are loaded from genre JSON files",
+	"Help" : "Examples lines for illustration only. Game cards are loaded from genre text files",
 	"samples" : [
 		{
 			"cardType" : "Title",

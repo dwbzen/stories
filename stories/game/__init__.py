@@ -8,6 +8,8 @@ __all__ = [
     'cardDeck',
     'chatManager',
     'commandResult',
+    'conversionUtils',
+    'dataManager',
     'environment',
     'gameConstants',
     'storiesGameEngine',
@@ -45,6 +47,8 @@ from .gameUtils import GameUtils
 from .player import Player
 from .team import Team
 from .logger import Logger
+from .conversionUtils import ConversionUtils
+from .dataManager import DataManager
 
 from .storiesGame import StoriesGame
 from .chatManager import ChatManager

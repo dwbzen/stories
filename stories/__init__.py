@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import sys
-minPythonVersion = (3, 10)
+minPythonVersion = (10, 12)
 minPythonVersionStr = '.'.join([str(x) for x in minPythonVersion])
 
 del sys
@@ -9,7 +9,7 @@ del minPythonVersion
 del minPythonVersionStr
 
 __author__ = "Donald Bacon"
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 
 # this defines what  is loaded when importing __all__

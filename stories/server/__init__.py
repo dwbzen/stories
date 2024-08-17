@@ -6,5 +6,9 @@ from .__version__ import __copyright__
 
 
 __all__ = [
-
+    'gameManager',
+    'playerManager'
 ]
+
+from .gameManager import StoriesGameManager, Game
+from .playerManager import StoriesPlayer, StoriesPlayerManager

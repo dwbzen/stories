@@ -12,6 +12,7 @@ from game.gameParameters import GameParameters
 from game.cardDeck import CardDeck
 from game.storyCard import StoryCard
 from game.gameState import GameState
+from game.dataManager import DataManager
 from collections import deque
 from datetime import datetime
 from game.logger import Logger
@@ -35,7 +36,7 @@ class StoriesGame(StoriesObject):
     """
 
 
-    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod", play_mode:PlayMode=PlayMode.INDIVIDUAL):
+    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod", play_mode:PlayMode=PlayMode.INDIVIDUAL, data_source='mongo'):
         """
         """
         self._installation_id = installationId
@@ -43,9 +44,11 @@ class StoriesGame(StoriesObject):
         self._resource_folder = self._env.get_resource_folder()     # base resource folder
         self._game_parameters_type = GameParametersType[game_parameters_type.upper()]      # can be "test", "prod", or "custom"
         self._resource_folder = self._env.get_resource_folder()     # base resource folder for example, "/Compile/stories/resources"
+        self._data_source = data_source
         #
         # load game parameters
         #
+        self._data_manager = DataManager(data_source, game_parameters_type, genre)
         self._load_game_configuration()
         self._play_mode = play_mode    # INDIVIDUAL, TEAM, or COLLABORATIVE PlayMode
         
@@ -106,6 +109,10 @@ class StoriesGame(StoriesObject):
     @property
     def game_parameters(self) -> GameParameters:
         return self._game_parameters
+    
+    @property
+    def game_parameters_type(self)->GameParametersType:
+        return self._game_parameters_type
     
     def bypass_error_checks(self)->bool:
         return self.game_parameters.bypass_error_checks

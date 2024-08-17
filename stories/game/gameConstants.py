@@ -40,7 +40,7 @@ class CardTypeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
     
 class GenreFilenames(Enum):
-    TITLES = "titles_"
+    TITLE  = "titles_"
     OPENING = "opening_lines_"
     OPENING_STORY = "opening_storylines_"
     STORY = "storylines_"
@@ -58,6 +58,18 @@ class ActionType(Enum):
     REORDER_LINES = "reorder_lines"
     COMPOSE = "compose"
     CALL_IN_FAVORS = "call_in_favors"
+
+class ParameterType(Enum):
+    BYPASS_ERROR_CHECKS =   "bypass_error_checks"
+    STORY_LENGTH =          "story_length"
+    MAX_CARDS =             "max_cards_in_hand"
+    AUTOMATIC_DRAW =        "automatic_draw"
+    CHARACTER_ALIAS =       "character_alias" 
+    GAME_POINTS =           "game_points"
+    ROUND_POINTS =          "round_points"
+    RANDOMIZE_PICKS =       "randomize_picks"
+    DATE_FORMAT =           "date_format"
+    
     
 class PlayMode(Enum):
     INDIVIDUAL = "individual"
@@ -104,7 +116,7 @@ class GameConstants(object):
         # There are 5 story card text files for each genre, loaded from the project resources/genres/<genre> folder.
         # currently genre :: "horror" | "noir" | "romance"
         #
-        filenames = {CardType.TITLE : f"{GenreFilenames.TITLES.value}{genre.value}.txt", \
+        filenames = {CardType.TITLE : f"{GenreFilenames.TITLE.value}{genre.value}.txt", \
                      CardType.OPENING : f"{GenreFilenames.OPENING.value}{genre.value}.txt", \
                      CardType.OPENING_STORY : f"{GenreFilenames.OPENING_STORY.value}{genre.value}.txt", \
                      CardType.STORY : f"{GenreFilenames.STORY.value}{genre.value}.txt", \

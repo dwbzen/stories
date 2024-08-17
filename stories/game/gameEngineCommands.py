@@ -4,7 +4,7 @@ Created on Dec 22, 2023
 @author: don_bacon
 '''
 
-from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder, PlayMode, PlayerRole
+from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder, PlayMode, PlayerRole, ParameterType
 from game.storiesGame import StoriesGame
 from game.commandResult import CommandResult
 from game.gameState import GameState
@@ -832,6 +832,52 @@ class GameEngineCommands(object):
         if ind < len(cards):
             card_number = cards[ind].number 
         return card_number
+
+    def set(self, player:Player, parameter_type:ParameterType, val:str|int)->CommandResult:
+        """Set a game configuration parameter. 
+        Arguments: 
+            player - the Player using this command. Already authorized.
+            what - the parameter to set. The following game parameters are supported:
+                bypass_error_checks - boolean 0 or 1 
+                story_length - int >= 4
+                max_cards_in_hand - range(5, 16)
+                automatic_draw - boolean 0 or 1
+                character_alias - dict. Keys must be in ["Michael", "Nick", "Samantha", "Vivian" ]
+             val - the value to set, subject to the above conditions. 
+            
+        In a collaborative or team game, only the director or a team lead may execute the set command
+        """
+        result = CommandResult()
+        ptype = parameter_type.value
+        match(parameter_type):
+            case ParameterType.AUTOMATIC_DRAW:
+                # val needs to be 0 or 1
+                if isinstance(val, int):
+                    bval = (val == 1)
+                    self.game_parameters.automatic_draw = bval
+                    result.message = f"{ptype} set to {bval}"
+                else:
+                    result.return_code = CommandResult.ERROR
+                    result.message = f"Invalid set value {val} for {ptype}"
+            case ParameterType.BYPASS_ERROR_CHECKS:
+                if isinstance(val, int):
+                    bval = (val == 1)
+                    self.game_parameters.bypass_error_checks = bval
+                    result.message = f"{ptype} set to {bval}"
+                else:
+                    result.return_code = CommandResult.ERROR
+                    result.message = f"Invalid set value {val} for {ptype}"
+    
+        return result
+
+    def set_player_property(self, player:Player, val:str)->CommandResult:
+        """
+            Arguments:
+                player - the Player using this command. Already authorized.
+                val - the set string in the form  [ <player_initials> | <player_number> ].<property>=value or
+    
+        """
+        return CommandResult(CommandResult.SUCCESS, "TODO")
     
     def show(self, what)->CommandResult:
         """Displays the top card of the discard pile
@@ -841,33 +887,34 @@ class GameEngineCommands(object):
             Returns: CommandResult.message is the str(card) for discard, a numbered list of str for story element classes.
         """
         message = ""
-        if what.lower()=="discard":
+        show_what = what.lower()
+        return_code = CommandResult.SUCCESS
+        if show_what=="discard":
             card,message = self.stories_game.get_discard()
             return_code = CommandResult.SUCCESS if card is not None else CommandResult.ERROR
-            done_flag = True if card is not None else False
             
-        elif what.lower()=="all":    # show story cards by card_type
+        elif show_what=="all":    # show story cards by card_type
             n = 1
             for card_type in ["Action", "Title", "Opening", "Opening/Story", "Story", "Closing"]:
                 cards = self.stories_game.get_story_cards_by_type(card_type)
                 for card in cards:
                     message = f"{message}{n}. {card}"
                     n += 1
-            done_flag = True
-            return_code = CommandResult.SUCCESS
         
-        elif what.lower()=="deck":    # show all cards in the deck in the order they appear in the deck
+        elif show_what=="deck":    # show all cards in the deck in the order they appear in the deck
             n = 1
             cards = self.stories_game.get_cards()
             for card in cards:
                 message = f"{message}{n}. {card}"
                 n += 1
-                
-            done_flag = True
-            return_code = CommandResult.SUCCESS
+            
+        elif show_what.startswith("param"):
+            message = str(self.game_parameters)
+            
+        elif show_what.startswith("json"):    # full command is jsonparameters
+            message = self.game_parameters.to_JSON()
                 
         else:    # display all the elements of a given story class
-            done_flag = True
             return_code = CommandResult.SUCCESS
             card_type = what.title()     # just in case
             cards = self.stories_game.get_cards_by_type(card_type)    # what must be a valid card_type.value
@@ -876,7 +923,7 @@ class GameEngineCommands(object):
                 for card in cards:
                     message = f"{message}{n}.  {card}"
                     n += 1
-        result = CommandResult(return_code, message, done_flag)
+        result = CommandResult(return_code, message)
         
         return result
         

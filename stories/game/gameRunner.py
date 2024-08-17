@@ -142,7 +142,7 @@ class GameRunner(object):
                     cmd_str = cmd.split(" ")
                     if cmd_str[0] in self._restricted_commands \
                       and self.game_mode != "test_prod" \
-                      and self._careersGame.game_parameters_type is GameParametersType.PROD:
+                      and self._stories_game.game_parameters_type is GameParametersType.PROD:
                         print( f"'{cmd_str[0]}' command not allowed in production mode")
                         continue
                     result = self.execute_command(cmd, current_player)

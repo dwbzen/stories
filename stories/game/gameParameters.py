@@ -4,7 +4,8 @@ Created on Dec 9, 2023
 @author: don_bacon
 '''
    
-from typing import Dict
+from typing import Dict, List
+import json
 
 class GameParameters(object):
     '''
@@ -46,6 +47,16 @@ class GameParameters(object):
         self._round_points:Dict[str,int] = params.get("round_points", {"1" : 5, "2" : 3, "3" : 1, "4" : 0})
         self._max_cards_in_hand = params.get("max_cards_in_hand", 10)
         self._automatic_draw = params.get("automatic_draw", 0) == 1
+        self._settable_parameter_names = ["bypass_error_checks", "story_length", "max_cards_in_hand", "automatic_draw", "character_alias" ]
+        self._id = params.get("_id", "None")
+        self._game_parameters["bypass_error_checks"] = self._bypass_error_checks
+        self._game_parameters["randomize_picks"] = self._randomize_picks
+        self._game_parameters["automatic_draw"] = self._automatic_draw
+        
+        # MongoDB parameters
+        self.db_url = params.get("DB_URL", "mongodb://localhost:27017/")
+        self.db_name = params.get("DB_NAME", "stories")
+        self.db_name_genres = params.get("DB_NAME_GENRES", "genres")
         
     def game_parameters(self):
         return self._game_parameters
@@ -54,12 +65,17 @@ class GameParameters(object):
         return self._game_parameters.get(param_name, None)
     
     @property
+    def settable_parameter_names(self)->List[str]:
+        return self._settable_parameter_names
+    
+    @property
     def game_points(self):
         return self._game_points
     
     @game_points.setter
     def game_points(self, value):
         self._game_points = value
+        self._game_parameters["game_points"] = value
     
     @property
     def character_aliases(self)->dict:
@@ -76,6 +92,7 @@ class GameParameters(object):
     @bypass_error_checks.setter
     def bypass_error_checks(self, value:bool):
         self._bypass_error_checks = value
+        self._game_parameters["bypass_error_checks"] = value
     
     @property
     def randomize_picks(self)->bool:
@@ -84,6 +101,7 @@ class GameParameters(object):
     @randomize_picks.setter
     def randomize_picks(self, value:bool):
         self._randomize_picks = value
+        self._game_parameters["randomize_picks"] = value
     
     @property
     def story_length(self)->int:
@@ -92,6 +110,7 @@ class GameParameters(object):
     @story_length.setter
     def story_length(self, value:int):
         self._story_length = value
+        self._game_parameters["story_length"] = value
         
     @property
     def round_points(self)->Dict[str,int]:
@@ -104,8 +123,21 @@ class GameParameters(object):
     @max_cards_in_hand.setter
     def max_cards_in_hand(self, val):
         self._max_cards_in_hand = val
+        self._game_parameters["max_cards_in_hand"] = val
         
     @property
     def automatic_draw(self)->bool:
         return self._automatic_draw
+    
+    @automatic_draw.setter
+    def automatic_draw(self, val):
+        self._automatic_draw = val
+        self._game_parameters["automatic_draw"] = val
+    
+    def __str__(self)->str:
+        return str(self._game_parameters)
+    
+    def to_JSON(self, indent=2):
+        return json.dumps(self._game_parameters, indent=indent)
+    
     
