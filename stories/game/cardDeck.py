@@ -4,7 +4,6 @@ Created on Dec 9, 2023
 @author: don_bacon
 '''
 import json
-import copy
 from game.storiesObject import StoriesObject
 from game.storyCard import StoryCard
 from game.gameUtils import GameUtils
@@ -17,34 +16,40 @@ class CardDeck(StoriesObject):
     
     """
 
-    def __init__(self, resource_folder, genre:GenreType, load_deck=True, aliases:dict=None):
+    def __init__(self, genre:GenreType, story_card_template:dict, alias:dict=None):
         '''
         CardDeck constructor
         Arguments:
-            resorce_folder - base resource folder for example, "/Compile/stories/resources"
             genre - the GenreType
+            story_card_template - a dict consisting of a story_card_template and all the loaded StoryCards
+            alias - character_alias dict or None
         '''
-        self._resource_folder = resource_folder
-        self._template_filename = f"{resource_folder}/story_cards_template.json"
-        self._genre = genre
-        self._character_aliases:dict = aliases if aliases is not None else {}
-        self._genres_folder = f"{self._resource_folder}/genres/{genre.value}"   # for example "/Compile/stories/resources/genres/horror"
         #
-        # load the story template file and genre resources
-        # to create the deck of Storycards
         #
-        self._deck:Dict = self.load_template_file(genre)
-        self._deck_cards:List[StoryCard] = []    # only the deck StoryCards
-        self._ncards = self.load_cards(self._deck, resource_folder, genre) if load_deck else 0
-        #
-        # replace character names with aliases
-        #
-        self.character_aliases = aliases
-        
-        self._deck_name = genre.value
-        self._card_types = []
+        self._deck = story_card_template
+        self._story_card_template = story_card_template
+        self._deck_cards:List[StoryCard] =  story_card_template["cards"]    # only the deck StoryCards
+        self._card_types_list:List[str] = story_card_template["card_types_list"]
+        self._card_types = story_card_template["card_types"]
         self._card_type_counts = {}
-
+        self._commands = story_card_template["commands"]
+        self._command_details = story_card_template["command_details"]
+        
+        #
+        # count the cards and CardTypes
+        #
+        total_count = 0
+        for ct in self._card_types:    # List[Dict]  all CardTypes including ActionCards
+            count = ct["maximum_count"]
+            self._card_type_counts[ct["card_type"]] = count
+            total_count += count
+        self._ncards = total_count
+        #
+        # replace character names with alias
+        #
+        self.character_alias = alias if alias is not None else {}
+                
+        self._deck_name = genre.value
         self._cards_index = GameUtils.shuffle(self.size())    # returns an empty list if size==0
         self._next_index = 0
         self._next_card_number = self._ncards
@@ -110,29 +115,29 @@ class CardDeck(StoriesObject):
         return self._card_type_counts
     
     @property
-    def character_aliases(self)->dict:
-        return self._character_aliases
+    def character_alias(self)->dict:
+        return self._character_alias
     
-    @character_aliases.setter
-    def character_aliases(self, aliases:dict|None):
-        self._character_aliases = aliases
+    @character_alias.setter
+    def character_alias(self, alias:dict|None):
+        self._character_alias = alias
         #
         # replace the names in all the story cards
         #
-        if aliases is not None:
+        if alias is not None:
             for card in self.deck_cards:
-                card.text = CardDeck.replace_names(card.text, aliases)
+                card.text = CardDeck.replace_names(card.text, alias)
     
-    def update_character_aliases(self, names:List[str]):
-        # prior to update, character_aliases = {'Michael': 'Don', 'Nick': 'Brian', 'Samantha': 'Cheryl', 'Vivian': 'Beth'} for example
+    def update_character_alias(self, names:List[str]):
+        # prior to update, character_alias = {'Michael': 'Don', 'Nick': 'Brian', 'Samantha': 'Cheryl', 'Vivian': 'Beth'} for example
         # characters - ['Michael', 'Nick', 'Samantha', 'Vivian']
-        # card.text character names are the character_aliases
+        # card.text character names are the character_alias
         characters = self._deck["characters"]
         if len(names) == len(characters):
-            aliases = {}
+            alias = {}
             for ind in range(len(names)):
-                aliases[self.character_aliases[characters[ind]]] = names[ind]
-            self.character_aliases = aliases
+                alias[self.character_alias[characters[ind]]] = names[ind]
+            self._character_alias = alias
 
     def draw(self, omit_type:CardType=None)->StoryCard:
         """Draw a card from the deck. If no cards remaining, re-shuffle and reset the next_index
@@ -240,105 +245,13 @@ class CardDeck(StoriesObject):
         """
         return self.draw_cards(ncards)
     
-    def load_template_file(self, genre:GenreType):
-        with open(self._template_filename, "r") as fp:
-            jtxt = fp.read()
-            template = json.loads(jtxt)    # returns a Dict
-        fp.close()
-        deck = { "Help" : f"{genre.value} story card deck"}
-        deck["card_types_list"] = template["card_types_list"]   # "Title", "Opening", "Opening/Story", "Story", "Closing"
-        self._card_types_list = []
-        #
-        # convert the card types to lower case for use in commands
-        # "title", "opening", "opening/story", "story", "closing", "action"
-        #
-        for ct in deck["card_types_list"]:
-            self._card_types_list.append(ct.lower())
-            
-        deck["action_types_list"] = template["action_types_list"]
-        deck["card_types"] = template["card_types"]
-        deck["action_types"] = template["action_types"]
-        deck["characters"] = template["characters"]
-        
-        self._card_types = deck["card_types"]
-        self._card_type_counts = {}
-        for c in self._card_types:    # dict
-            card_type = c["card_type"]
-            max_count = c["maximum_count"]
-            self._card_type_counts[card_type] = max_count
-        self._commands = template["commands"]
-        self._command_details = template["command_details"]
-        return deck
-    
-    def load_cards(self, deck:dict, resource_folder, genre:GenreType)->int:
-        """Loads the specified card deck text files.
-            Arguments:
-                path -  resource file path
-                genre - the GenreType to load
-            Returns:
-                the number of StoryCards added
-            Also sets the values of _deck, _deck_cards, _card_types
-            if character_aliases is not an empty dictionary, character names
-            in each line is replaced by its alias.
-            The "card_types" element in story_card_temlate.json gives the number of cards to load for each card_type.
-            This number is <= the number of lines in the file.
-            The entire file is shuffled first so that the selection is unique for each game.
-            @see stories.game.GameUtils
-        """
-        filenames = GameConstants.get_genre_filenames(genre)   # Dict with CardType as the key and the card text file as the value
-        total_count = 0
-        number = 0
-        lines = []
-        for card_type in filenames.keys():
-            filepath = f"{resource_folder}/genres/{genre.value}/{filenames[card_type]}"
-            count = 0
-            max_count = self._card_type_counts[card_type.value]
-            print(filepath)
-            lines = self.read_story_file(filepath, shuffle=True)
-            #
-            # create a random list max_count long so every game is unique
-            #
-            for line in lines:
-                #
-                # create a StoryCard instance for this card type
-                #
-                storyCard = StoryCard(genre, card_type, line, number)
-                self._deck_cards.append(storyCard)
-                number+=1
-                count+=1
-                if count >= max_count:
-                    break
-                
-            self._card_type_counts[card_type.value] = count
-            total_count += count
-        #
-        # add the action cards
-        #
-        count = 0
-        card_type = CardType.ACTION
-        for action in deck["action_types"]:
-            action_type = ActionType[action["action_type"].upper()]
-            text = f'{action["text"]}\n'
-            qty = action["quantity"]
-            max_arguments = action.get("max_arguments", 0)
-            min_arguments = action.get("min_arguments", 0)
-            story_element = action.get("story_element", 0)==1
-            for i in range(qty):
-                storyCard = StoryCard(genre, card_type, text, number, action_type, min_arguments, max_arguments, story_element)
-                self._deck_cards.append(storyCard)
-                number+=1
-            count += qty
-        self._card_type_counts[card_type.value] = count
-
-        deck["cards"] = self._deck_cards
-        return len(self._deck_cards)
     
     @staticmethod
     def replace_names(line:str, aliases:dict)->str:
         """Replace character name(s) with its alias
             Arguments:
                 line - a line of text that may or may not reference a character name.
-                aliases - a dict of character aliases. The len must be 4 (since there are 4 characters)
+                alias - a dict of character aliases. The len must be 4 (since there are 4 characters)
         """
         newline = line
         if len(aliases) > 0:
@@ -373,34 +286,6 @@ class CardDeck(StoriesObject):
         if card is None:    # remove from the deck by deactivating so it won't be drawn
             ind = -1
         return ind
-    
-    def read_story_file(self, filepath, shuffle=False)->List[str]:
-        with open(filepath) as fp:
-            lines = []
-            continue_line = False
-            cline = ""
-            for line in fp:
-                line = line.lstrip().rstrip()    # delete left padding and trailing \n
-                if line=="" or line.startswith("--"):    # skip comment lines
-                    continue
-                if line.endswith('\\'):    # continues on next line
-                    line = line.removesuffix('\\')
-                    if continue_line:
-                        cline = f"{cline}\n{line}"
-                    else:
-                        continue_line = True
-                        cline = line
-                else:
-                    if continue_line:
-                        cline = f"{cline}\n{line}\n"
-                        lines.append(cline)
-                        continue_line = False
-                    else:
-                        lines.append(f"{line}\n")
-        fp.close()
-        if shuffle:
-            lines = GameUtils.shuffle_list(lines)
-        return lines
     
     @property
     def commands(self)->List[str]:

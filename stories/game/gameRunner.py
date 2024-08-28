@@ -23,11 +23,15 @@ class GameRunner(object):
             total_points - total game points
             debug_flag - set to True for debugging output
             game_mode - 'test', 'prod', 'test-prod' or 'custom'
+            play_mode - 'individual', 'team' or 'collaborative'
+            source - 'mongo' or 'text'
+            aliases - 
             stories_game - a StoriesGame instance. If not None, all previous parameters except debug_flag
               are set from stories_game
             
     """
-    def __init__(self, installationId:str, genre:str, total_points:int, log_level:str, game_mode:str, play_mode:PlayMode, aliases:List[str], stories_game:StoriesGame|None=None):
+    def __init__(self, installationId:str, genre:str, total_points:int, log_level:str, game_mode:str, \
+                 play_mode:PlayMode, source:str, aliases:List[str], stories_game:StoriesGame|None=None):
         """
         Constructor
         """
@@ -35,6 +39,7 @@ class GameRunner(object):
         self._genre = genre
         self._total_points = total_points
         self._game_mode = game_mode 
+        self._source = source
         self._play_mode = play_mode
         self._log_level = log_level
         debug_flag = log_level == 'debug'
@@ -45,7 +50,7 @@ class GameRunner(object):
         if stories_game is None:          # create a new StoriesGame
             self.game_engine = StoriesGameEngine(stories_game=None, game_id=None, loglevel=log_level, installationId=installationId)
 
-            result = self.game_engine.create(self._installationId, genre, total_points, self._play_mode, game_mode)
+            result = self.game_engine.create(self._installationId, genre, total_points, self._play_mode, self._source, game_mode)
             if result.return_code != CommandResult.SUCCESS:
                 logging.error("Could not create a StoriesGame")
             
@@ -274,6 +279,7 @@ def main():
     parser.add_argument("--points", help="Total game points. This overrides gameParameters settings", type=int, choices=range(10, 100), default=20)
     parser.add_argument("--params", help="Game parameters type: 'test', 'prod', or 'custom' ", type=str, \
                         choices=["test","prod","custom"], default="test")
+    parser.add_argument("--source", help="mongo or text", type=str, choices=['mongo','text'], default='mongo')
     
     parser.add_argument("--restore", "-r", help="Restore game by gameid", action="store_true", default=False)    # TODO - need --gameid for restore
     parser.add_argument("--gameid", help="Game ID", type=str, default=None)
@@ -286,7 +292,7 @@ def main():
     parser.add_argument("--genre", help="Story genre", type=str, choices=["horror","romance","noir"], default="horror")
     parser.add_argument("--aliases", help="Comma-separate list of 4 character aliases. This overrides gameParameters settings")
     parser.add_argument("--playmode", help="Play mode: individual, collaborative, team", choices=["individual", "collaborative", "team" ],  default="individual" )
-    
+      
     #
     # In a collaborative play mode, players build a common story
     # One player has the PlayerRole of DIRECTOR, the others have a PLAYER role
@@ -306,7 +312,7 @@ def main():
     
     game_mode = "prod" if args.params=="test_prod" else args.params
     play_mode = PlayMode[args.playmode.upper()]
-    game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, play_mode, args.aliases, stories_game=None)
+    game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, play_mode, args.source, args.aliases, stories_game=None)
     
     if script_filePath is not None:
         result = game_runner.run_script(script_filePath, args.delay, log_comments=log_comments)

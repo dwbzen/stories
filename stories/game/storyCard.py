@@ -119,5 +119,6 @@ class StoryCard(StoriesObject):
         return pdict
 
     def to_JSON(self, indent=2):
-        return json.dumps(self.to_dict(), indent)
+        d = self.to_dict()
+        return json.dumps(self.to_dict(), indent=indent)
         

@@ -36,7 +36,8 @@ class StoriesGame(StoriesObject):
     """
 
 
-    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod", play_mode:PlayMode=PlayMode.INDIVIDUAL, data_source='mongo'):
+    def __init__(self, installationId:str, genre:str, total_points:int=20, game_id:str=None, game_parameters_type="prod",\
+                  play_mode:PlayMode=PlayMode.INDIVIDUAL, data_source='mongo'):
         """
         """
         self._installation_id = installationId
@@ -46,10 +47,10 @@ class StoriesGame(StoriesObject):
         self._resource_folder = self._env.get_resource_folder()     # base resource folder for example, "/Compile/stories/resources"
         self._data_source = data_source
         #
-        # load game parameters
+        # load game parameters and story cards from the specified source
         #
-        self._data_manager = DataManager(data_source, game_parameters_type, genre)
-        self._load_game_configuration()
+        self._data_manager = DataManager(data_source, game_parameters_type, genre)    # the init loads the game parameters 
+        self._game_parameters = self._data_manager.game_parameters
         self._play_mode = play_mode    # INDIVIDUAL, TEAM, or COLLABORATIVE PlayMode
         
         self._genre = GenreType[genre.upper()]
@@ -68,40 +69,29 @@ class StoriesGame(StoriesObject):
         self.game_duration = 0
         self.round_durations:List[int] = []
 
-              
-    def _load_game_configuration(self):
-        """Loads the game parameters and occupations JSON files for this edition.
-        
-        """
-        game_params_type = self._game_parameters_type.value
-        self._game_parameters_filename = f'{self._resource_folder}/gameParameters_{game_params_type}.json'
-
-        with open(self._game_parameters_filename, "r") as fp:
-            jtxt = fp.read()
-            self._game_parameters = GameParameters(json.loads(jtxt))
-        fp.close()
-        
     @property
     def genre(self)->GenreType:
         return self._genre
     
-    def _create_story_decks(self, character_aliases:dict=None):
+    def _create_story_decks(self, character_alias:dict=None):
         """Load the story decks for a given genre (story_card_deck)
             Also creates an empty CardDeck for player discards (story_discard_deck)
             Arguments:
-                aliases - optional 4-element dict of character aliases
+                character_alias - optional 4-element dict of character aliases
                         This overrides settings in the gameParameters files.
         """
-        aliases = self.game_parameters.character_aliases if character_aliases is None else character_aliases
-        self._story_card_deck = CardDeck(self.resource_folder, self.genre, aliases=aliases)
+        alias = self.game_parameters.character_alias if character_alias is None else character_alias
+        # self._story_card_deck = self._data_manager.load_story_cards(self._data_source, self.genre, alias)
+        story_card_template = self._data_manager.story_card_template
+        self._story_card_deck = CardDeck(self.genre, story_card_template, alias=alias)
         self._story_discard_deck = deque()      # empty deque for discards. Player discards added to the right
         
-    def set_character_aliases(self, names:List[str]):
+    def set_character_alias(self, names:List[str]):
         """Updates story_card_deck with new character alias names
             Arguments:
                 names - a List of 4 alias names (str)
         """
-        self._story_card_deck.update_character_aliases(names)
+        self._story_card_deck.update_character_alias(names)
         
     def add_to_discard(self, card:StoryCard):
         self._story_discard_deck.append(card)   # add to the right
@@ -116,6 +106,10 @@ class StoriesGame(StoriesObject):
     
     def bypass_error_checks(self)->bool:
         return self.game_parameters.bypass_error_checks
+    
+    @property
+    def data_manager(self)->DataManager:
+        return self._data_manager
     
     def check_errors(self)->bool:
         """A convenience method that returns True if checking for errors,

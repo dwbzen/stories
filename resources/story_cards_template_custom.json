@@ -1,5 +1,5 @@
 {
-	"Title" : "default",
+	"Title" : "custom",
 	"Help" : "Template story card deck.",
 	"card_types_list" : [
 		"Title", "Opening", "Opening/Story", "Story", "Closing", "Action"

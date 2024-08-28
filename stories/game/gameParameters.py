@@ -34,10 +34,12 @@ class GameParameters(object):
     '''
 
 
-    def __init__(self, params:dict):
+    def __init__(self, params:dict={}):
+        """
+            To load default parameters, use the constructor with no arguments
+        """
         self._game_parameters = params
-
-        self._character_aliases = params.get("character_alias")
+        self._character_alias = params.get("character_alias", {"Michael" : "Michael", "Nick" : "Nick", "Samantha" : "Samantha", "Vivian" : "Vivian"} )
         self._game_points = params.get("game_points", 20)
         self._date_format = params.get("date_format", "yyyy-dd-mm")
         self._description = params.get("description", "No description")
@@ -57,8 +59,9 @@ class GameParameters(object):
         self.db_url = params.get("DB_URL", "mongodb://localhost:27017/")
         self.db_name = params.get("DB_NAME", "stories")
         self.db_name_genres = params.get("DB_NAME_GENRES", "genres")
-        
-    def game_parameters(self):
+    
+    @property
+    def game_parameters(self)->dict:
         return self._game_parameters
     
     def get_param(self, param_name):
@@ -76,10 +79,6 @@ class GameParameters(object):
     def game_points(self, value):
         self._game_points = value
         self._game_parameters["game_points"] = value
-    
-    @property
-    def character_aliases(self)->dict:
-        return self._character_aliases
     
     @property
     def bypass_error_checks(self)->bool:
@@ -133,6 +132,10 @@ class GameParameters(object):
     def automatic_draw(self, val):
         self._automatic_draw = val
         self._game_parameters["automatic_draw"] = val
+    
+    @property
+    def character_alias(self)->dict:
+        return self._character_alias
     
     def __str__(self)->str:
         return str(self._game_parameters)

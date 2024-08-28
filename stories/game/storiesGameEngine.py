@@ -227,15 +227,16 @@ class StoriesGameEngine(object):
     def game_parameters(self)->GameParameters:
         return self._game_parameters
     
-    def create(self, installationId:str, genre:str, total_points:int, play_mode:PlayMode, game_parameters_type="test") -> CommandResult:
+    def create(self, installationId:str, genre:str, total_points:int, play_mode:PlayMode, source:str, game_parameters_type="test") -> CommandResult:
         """Create a new StoriesGame for a given genre.
             Initialize GameEngineCommands
         """
         self._installationId = installationId
-        self._stories_game = StoriesGame(installationId, genre, total_points, self._game_id, game_parameters_type, play_mode)
+        self._stories_game = StoriesGame(installationId, genre, total_points, self._game_id, game_parameters_type, play_mode, source)
         self._game_state = self._stories_game.game_state
         self._game_state.game_id = self._game_id
         self._play_mode = play_mode
+        self._source = source
         self._game_parameters = self._stories_game.game_parameters
         
         # initialize GameEngineCommands

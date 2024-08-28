@@ -25,6 +25,7 @@ __all__ = [
     'storyCard',
     'storyCardHand',
     'storyCardList',
+    'storyCardLoader',
     'team'
 ]
 from .storiesObject import StoriesObject
@@ -49,6 +50,7 @@ from .team import Team
 from .logger import Logger
 from .conversionUtils import ConversionUtils
 from .dataManager import DataManager
+from .storyCardLoader import StoryCardLoader
 
 from .storiesGame import StoriesGame
 from .chatManager import ChatManager

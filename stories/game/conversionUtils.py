@@ -37,7 +37,7 @@ class ConversionUtils(object):
         num = 1
         with open(self.genre_file_path) as fp:
             for line in fp:
-                line = line.lstrip().rstrip()           # delete left padding and trailing \n
+                line = line.lstrip().rstrip()           # delete left padding
                 if line=="" or line.startswith("--"):   # skip comment lines
                     continue
                 line = line.replace('"', '\\"')     # embedded quotes must be escaped twice, as in \\" 
@@ -56,14 +56,16 @@ class ConversionUtils(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Convert a genre text file to JSON")
     card_types = ["title", "opening", "opening_story", "story", "closing"]       # CardType
-    card_type_choices = card_types.append("all")    # to convert all 5 card types
+    card_type_choices = ["title", "opening", "opening_story", "story", "closing", "all"]    # to convert all 5 card types
     genres = ["horror","romance","noir"]
     parser.add_argument("--genre", help="Story genre", type=str, choices=genres, default="horror")
     parser.add_argument("--cardtype", help="CardType", type=str, choices=card_type_choices)
     
     args = parser.parse_args()
     if args.cardtype == "all":
-        print("All option not available")
+        for ct in card_types:
+            conversion_util = ConversionUtils(args.genre, ct)
+            conversion_util.convert()
     else:
         conversion_util = ConversionUtils(args.genre, args.cardtype)
         conversion_util.convert()
