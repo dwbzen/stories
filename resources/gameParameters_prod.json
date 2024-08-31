@@ -1,4 +1,5 @@
 {
+	"_id" : "66c21fbfbfae13707a9dd71b",
 	"Title" : "prod", 
 	"description" : "Production game parameters",
 	"date_format" : "yyyy-dd-mm",

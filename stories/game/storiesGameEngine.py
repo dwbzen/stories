@@ -66,7 +66,7 @@ class StoriesGameEngine(object):
         self._start_date_time = datetime.now()
         self._installationId = installationId      # provided by the UI or the GameRunner
         self._current_player:Player = None
-        self._admin_player:Player = Player(number=-1, name='Administrator', player_id="admin00", initials='admin')
+        self._admin_player:Player = Player(number=-1, name='Administrator', login_id="admin00", initials='admin')
         
         self._game_state:GameState = None   # set with create()
         self._automatic_run = False         # set to True if running a script
@@ -254,11 +254,11 @@ class StoriesGameEngine(object):
     #
     #####################################
 
-    def add(self, what, player_name, initials=None, player_id=None, email=None, role_name:str="player") -> CommandResult:
+    def add(self, what, player_name, initials=None, login_id=None, email=None, role_name:str="player") -> CommandResult:
         """Add a new player, team member or director to the Game.
     
         """
-        return self._gameEngineCommands.add(what, player_name, initials, player_id, email, role_name)
+        return self._gameEngineCommands.add(what, player_name, initials, login_id, email, role_name)
     
     def add_team(self, name, *args)->CommandResult:
         return self._gameEngineCommands.add_team(name, *args)

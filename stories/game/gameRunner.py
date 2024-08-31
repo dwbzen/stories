@@ -337,9 +337,9 @@ def main():
         player_name = f"Player_{i+1}" if players is None else players[i]
         initials = f"PN{i+1}" if players is None else player_initials[i]
         email = f"{player_name}@gmail.com"
-        player_id = player_name
+        login_id = player_name
         
-        game_runner.execute_command(f"add player {player_name} {initials} {player_id} {email}")
+        game_runner.execute_command(f"add player {player_name} {initials} {login_id} {email}")
         # 
         
     game_runner.execute_command("start game", current_player)

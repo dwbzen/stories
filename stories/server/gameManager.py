@@ -31,7 +31,7 @@ class Game(BaseModel):
         """
             Constructor
         """
-        id: str = Field(alias="_id", default=None)
+        id: str = Field(default=None)
         gameId: str = Field(alias="game_id", default=None)
         installationId = Field(alias="installation_id", default=None)
         createdBy: str = Field(alias="installationId", default=None)
@@ -51,7 +51,6 @@ class StoriesGameManager(object):
         """
         self.games = {}
         self.config = dotenv.dotenv_values(".env")
-        self.openapi_api_key = self.config["OPENAI_API_KEY"]
         self.mongo_client = MongoClient(self.config["DB_URL"])
         self.db_name = self.config["DB_NAME"]
         self.database = self.mongo_client[self.db_name]

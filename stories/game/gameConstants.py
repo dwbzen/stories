@@ -25,6 +25,15 @@ class CardType(Enum):
     CLOSING = "Closing"
     ACTION = "Action"
 
+class PlayerLevel(Enum):
+    """PlayerLevel determines what commands & action cards are available to a player
+    """
+    UNREGISTERED = "unregistered"
+    FREE = "free"
+    LEVEL_1 = "level_1"
+    LEVEL_2 = "level_2"
+    ELITE = "elite"
+
 class CardTypeEncoder(json.JSONEncoder):
     def encode(self, obj):
         # print("CLS")

@@ -5,7 +5,7 @@ Created on Dec 8, 2023
 '''
 
 from game.storiesObject import StoriesObject
-from game.gameConstants import CardType, PlayerRole, PlayMode
+from game.gameConstants import CardType, PlayerRole, PlayMode, PlayerLevel
 from game.storyCardHand import StoryCardHand
 from game.storyCard import StoryCard
 from game.commandResult import CommandResult
@@ -19,11 +19,11 @@ class Player(StoriesObject):
     """
 
 
-    def __init__(self, number=0, name="Player", player_id="", initials="xyz", email="xyz@gmail.com", game_id=None, \
+    def __init__(self, number=0, name="Player", login_id="loginid", initials="xyz", email="xyz@gmail.com", game_id=None, \
                  player_role=PlayerRole.PLAYER, play_mode:PlayMode=PlayMode.INDIVIDUAL):
         self._player_name = name
         self._player_initials = initials            # unique initials - no player can have the same initials
-        self._player_id = player_id
+        self._login_id = login_id
         self._player_email = email
         self._phone:str = None
         self._game_id = game_id
@@ -39,14 +39,15 @@ class Player(StoriesObject):
         self._num_cards_discarded = 0   # must discard the same number played
         self._card_drawn = False        # set to True when the player draws a card from one of the game decks
         self._story_elements_played = {CardType.TITLE : 0, CardType.OPENING : 0, CardType.STORY : 0, CardType.CLOSING : 0, CardType.ACTION : 0}
+        self._player_level:PlayerLevel = PlayerLevel.UNREGISTERED
     
     @property
-    def player_id(self):
-        return self._player_id
+    def login_id(self):
+        return self._login_id
 
-    @player_id.setter
-    def player_id(self, value):
-        self._player_id = value
+    @login_id.setter
+    def login_id(self, value):
+        self._login_id = value
 
     @property
     def player_email(self) ->str:
@@ -104,6 +105,17 @@ class Player(StoriesObject):
     @player_role.setter
     def player_role(self, role:PlayerRole):
         self._player_role = role
+        
+    @property
+    def player_level(self)->PlayerLevel:
+        return self._player_level
+    
+    @player_level.setter
+    def player_level(self, level:PlayerLevel|str):
+        if isinstance(level, str):
+            self._player_level = PlayerLevel[level.upper()]
+        else:
+            self._player_level = level
         
     @property
     def phone(self)->str:
@@ -291,7 +303,8 @@ class Player(StoriesObject):
         return CommandResult(return_code, message, done_flag)
         
     def info(self)->str:
-        msg = f'"name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}", "id":"{self.player_id}" "role": {self.player_role.value}'
+        msg = f'"name" : "{self.player_name}",  "number" : "{self.number}",  "initials" : "{self.player_initials}", "id":"{self.login_id}", "role": {self.player_role.value}'
+        msg = f'{msg}, "level" : "{self.player_level.value}"'
         return f"{msg}\n{self.stats()}"
 
     def stats(self)->str:
@@ -314,7 +327,7 @@ class Player(StoriesObject):
         self.player_name = player_dict["name"]
         self.number = player_dict["number"]
         self.player_initials = player_dict["initials"]
-        self.player_id = player_dict["player_id"]
+        self.login_id = player_dict["login_id"]
         self.player_email = player_dict["email"]
         self.player_role = PlayerRole[player_dict["email"].upper()]
         

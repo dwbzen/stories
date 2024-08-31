@@ -125,7 +125,7 @@ class GameEngineCommands(object):
             players = self.game_state.players
             lc_pid = pid.lower()
             for p in players:
-                if p.player_initials.lower() == lc_pid or p.player_id  == lc_pid or p.player_name.lower() == lc_pid:
+                if p.player_initials.lower() == lc_pid or p.login_id  == lc_pid or p.player_name.lower() == lc_pid:
                     player = p
                     break
         return player
@@ -166,13 +166,13 @@ class GameEngineCommands(object):
     #
     #####################################
 
-    def add(self, what, player_name, initials, player_id, email, role_name) -> CommandResult:
+    def add(self, what, player_name, initials, login_id, email, role_name) -> CommandResult:
         """Add a new player or team to the Game.
             Note - team semantics TBD
         """
         if what == 'player':
             player_role = PlayerRole.PLAYER if role_name is None else PlayerRole[role_name.upper()]
-            player = Player(name=player_name, player_id=player_id, initials=initials, email=email, game_id=None, player_role=player_role)
+            player = Player(name=player_name, login_id=login_id, initials=initials, email=email, game_id=None, player_role=player_role)
             self._stories_game.add_player(player)        # adds to GameState which also sets the player number
             message = player.to_JSON()
             self.log(message)

@@ -8,6 +8,7 @@ from typing import List
 import json
 import pymongo
 import argparse
+import dotenv
 from game.gameConstants import GameParametersType, GenreType
 from game.gameParameters import GameParameters
 from game.commandResult import CommandResult
@@ -33,10 +34,9 @@ class DataManager(object):
         self._source = source
         self._genre = GenreType[genre.upper()]
         self._env = Environment.get_environment()
-        self._resource_folder = self._env.get_resource_folder()     # base resource folder
+        self._resource_folder = self._env.get_resource_folder()     # base resource folder for example, "/Compile/stories/resources"
         self._game_parameters_type = GameParametersType[game_parameters_type.upper()]      # can be "test", "prod", or "custom"
         self._game_parameters = None
-        self._resource_folder = self._env.get_resource_folder()     # base resource folder for example, "/Compile/stories/resources"
         self.active = True
         self._card_deck = None
         self._deck_cards = None
@@ -56,17 +56,10 @@ class DataManager(object):
     def mongo_init(self)->CommandResult:
         """Initializes MongoDB client info using the .env project file
         """
-        env_file = f'{self._env.package_base}/.env'
-        params = {}
-        with open(env_file, "r") as efp:
-            for line in efp:
-                if len(line)>0:
-                    tokens = line.split("=")
-                    params[tokens[0]] = tokens[1].rstrip()
-        efp.close()
-        self._db_url = params["DB_URL"]
-        self._db_name = params["DB_NAME"]
-        self._db_name_genres = params["DB_NAME_GENRES"]
+        config = dotenv.dotenv_values(".env")
+        self._db_url = config["DB_URL"]
+        self._db_name = config["DB_NAME"]
+        self._db_name_genres = config["DB_NAME_GENRES"]
         
         try:
             mongo_client = pymongo.MongoClient(self._db_url)
@@ -205,6 +198,7 @@ class DataManager(object):
 if __name__ == '__main__':
     """A quick test to load a parameters file, story card template, and story cards.
     """
+    
     parser = argparse.ArgumentParser(description="DataManager for text or MongoDB")
     parser.add_argument("--source", help="mongo or text", type=str, choices=['mongo','text'], default='text')
     parser.add_argument("--params", help="Parameters type", type=str, choices=['prod','test','custom'], default='test')

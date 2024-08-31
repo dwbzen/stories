@@ -10,35 +10,64 @@ from datetime import datetime
 from uuid import uuid4
 
 import dotenv
+import pymongo
 from pydantic import BaseModel, Field
 
 class StoriesPlayer(BaseModel):
+    id: str = Field(default=None)
     name: str = Field(...)
-    email: str = Field(...)
     initials: str = Field(...)
+    email: str = Field(...)
+    login_id:str = Field(default=None)
     phone:str = Field(...)
-    id: str = Field(alias="_id", default=None)
+    play_level:str = Field(default="free")
     number: int = Field(default=0)
+    active:bool = Field(default=True)
     createdDate: datetime = Field(default=datetime.now())
 
 class StoriesPlayerManager(object):
     
     def __init__(self):
-       """
-           Constructor
-       """
-       self.config = dotenv.dotenv_values(".env")
-       self.collection = self.database["players"]
-       #
-       # TODO determine the DB to use - Mongo or ?
-       #
+        """
+            Constructor
+        """
+        self.config = dotenv.dotenv_values(".env")
+        self.db_url = self.config["DB_URL"]
+        self.db_name = self.config["DB_NAME"]
+        result,message = self.db_init()
+        if result:
+            self.collection = self.stories_db["players"]
+        else:
+            print(message)
+    
+    def db_init(self)->(bool,str):
+        message = None
+        result = True
+        try:
+            mongo_client = pymongo.MongoClient(self.db_url)
+            self.stories_db = mongo_client[self.db_name]
+            self.mongo_client = mongo_client
+        except Exception as ex:
+            message = f'MongoDB error, exception: {str(ex)}'
+            result = False
+            
+        return result,message
        
     def create_player(self, player:StoriesPlayer)->StoriesPlayer:
-       player.id = uuid4()
-       self.collection.insert_one(jsonable_encoder(player))      
+        player.id = uuid4()
+        self.collection.insert_one(jsonable_encoder(player))
+        return player
        
     def getUserByUserId(self, playerId: str) -> StoriesPlayer:
         return self.collection.find_one({"_id": playerId})
+    
+    def getUserByInitials(self, initials:str)->StoriesPlayer:
+        info = self.collection.find_one({"initials": initials})
+        if info is not None:
+            player = StoriesPlayer(**info)
+        else:
+            player = None
+        return player
     
     def deleteUser(self, playerId: str):
         self.collection.delete_one({"_id": playerId})
