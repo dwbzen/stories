@@ -227,7 +227,7 @@ class StoriesGameEngine(object):
     def game_parameters(self)->GameParameters:
         return self._game_parameters
     
-    def create(self, installationId:str, genre:str, total_points:int, play_mode:PlayMode, source:str, game_parameters_type="test") -> CommandResult:
+    def create(self, installationId:str, genre:str, total_points:int, play_mode:PlayMode|str, source:str, game_parameters_type="test") -> CommandResult:
         """Create a new StoriesGame for a given genre.
             Initialize GameEngineCommands
         """
@@ -235,7 +235,7 @@ class StoriesGameEngine(object):
         self._stories_game = StoriesGame(installationId, genre, total_points, self._game_id, game_parameters_type, play_mode, source)
         self._game_state = self._stories_game.game_state
         self._game_state.game_id = self._game_id
-        self._play_mode = play_mode
+        self._play_mode = PlayMode[play_mode.upper()] if isinstance(play_mode, str) else play_mode
         self._source = source
         self._game_parameters = self._stories_game.game_parameters
         
@@ -374,7 +374,7 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.pass_card(card_number)
 
-    def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
+    def list(self, what='hand', initials:str='me', how='numbered', display_format='text') ->CommandResult:
         """List the Experience or Gateway cards held by the current player
             Arguments: 
                 what - "hand" or "story"
@@ -383,22 +383,27 @@ class StoriesGameEngine(object):
             Returns: CommandResult.message is the stringified list of str(card).
             
         """
-        return self._gameEngineCommands.list(what, initials, how)
+        return self._gameEngineCommands.list(what, initials, how, display_format)
     
-    def ls(self, what='hand', initials:str='me', how='regular') ->CommandResult:
+    def ls(self, what='hand', initials:str='me', how='regular', display_format='text') ->CommandResult:
         """Alias for list
         """
-        return self.list(what, initials, how)
+        return self.list(what, initials, how, display_format)
     
-    def list_numbered(self)->CommandResult:
+    def list_numbered(self, display_format='text ')->CommandResult:
         """Alias for 'list hand me numbered'
         """
-        return self.list(how="numbered")
+        return self.list(how="numbered", display_format=display_format)
     
-    def ln(self, what='hand', initials:str='me', how='numbered')->CommandResult:
+    def ln(self, what='hand', initials:str='me', how='numbered', display_format='text')->CommandResult:
         """Alias for 'list hand me numbered'
         """
-        return self.list(what, initials, how)
+        return self.list(what, initials, how, display_format=display_format)
+    
+    def lnj(self, what='hand', initials:str='me', how='numbered')->CommandResult:
+        """Alias for 'list hand me numbered' as json
+        """
+        return self.list(what, initials, how, display_format="json")
     
     def set(self, what:str, val:str)->CommandResult:
         """Set a game configuration parameter. 
@@ -440,21 +445,29 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.show(what)
         
-    def read(self, numbered:bool=False, initials:str=None)->CommandResult:
+    def read(self, numbered:bool=False, initials:str=None, display_format='text')->CommandResult:
         """Display a player's story in a readable format.
         """
-        return self._gameEngineCommands.read(numbered, initials)
+        return self._gameEngineCommands.read(numbered, initials, display_format)
     
-    def rn(self, initials:str=None)->CommandResult:
-        return self.read(True, initials)
+    def rn(self, initials:str=None, display_format='text')->CommandResult:
+        return self.read(True, initials, display_format)
     
     def save(self, how="json") -> CommandResult:
         """Save the current game state.
             Arguments: how - save format: 'json' or 'pkl' (the default).
-            save('pkl') uses joblib.dump() to save the CareersGame instance to binary pickel format.
+            save('pkl') uses joblib.dump() to save the CareersGame instance to binary pickle format.
             This can be reconstituted with joblib.load()
+            @see https://joblib.readthedocs.io/en/latest/index.html
         """
-        return self._gameEngineCommands.save_game(self._game_filename_base, self.game_id, how=how) 
+        return self._gameEngineCommands.save_game(self._game_filename_base, self.game_id, how=how)
+    
+    def load(self, game_id:str, source='mongo') -> CommandResult:
+        """Load a previously saved game, identified by the game Id
+        
+        """
+        result = CommandResult(CommandResult.SUCCESS, "'load' command not yet implemented, any day now!")
+        return result    
 
     def status(self, initials:str=None)->CommandResult:
         return self._gameEngineCommands.status(initials)

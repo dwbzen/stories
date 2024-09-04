@@ -5,7 +5,6 @@ Created on Aug 12, 2024
 '''
 
 from fastapi.encoders import jsonable_encoder
-from typing import Any, List
 from datetime import datetime
 from uuid import uuid4
 
@@ -14,6 +13,8 @@ import pymongo
 from pydantic import BaseModel, Field
 
 class StoriesPlayer(BaseModel):
+    """Profile information for Stories players.
+    """
     id: str = Field(default=None)
     name: str = Field(...)
     initials: str = Field(...)
@@ -21,7 +22,6 @@ class StoriesPlayer(BaseModel):
     login_id:str = Field(default=None)
     phone:str = Field(...)
     play_level:str = Field(default="free")
-    number: int = Field(default=0)
     active:bool = Field(default=True)
     createdDate: datetime = Field(default=datetime.now())
 
@@ -65,8 +65,13 @@ class StoriesPlayerManager(object):
         info = self.collection.find_one({"initials": initials})
         if info is not None:
             player = StoriesPlayer(**info)
-        else:
-            player = None
+        else:    # try upper case
+            info = self.collection.find_one({"initials": initials.upper()})
+            if info is not None:
+                info["initials"] = initials.upper()
+                player = StoriesPlayer(**info)
+            else:
+                player = None
         return player
     
     def deleteUser(self, playerId: str):

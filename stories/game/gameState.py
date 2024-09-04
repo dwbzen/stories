@@ -9,7 +9,7 @@ import json
 from game.player import Player
 from game.team import Team
 from game.storiesObject import StoriesObject
-from game.gameConstants import GameParametersType, CardType, PlayerRole
+from game.gameConstants import GameParametersType, CardType, PlayerRole, GenreType, PlayMode
 from typing import List, Dict
 
 class GameState(StoriesObject):
@@ -44,11 +44,13 @@ class GameState(StoriesObject):
         self._start_datetime:datetime = datetime.today()
         self._end_datetime:datetime = None
         self._game_complete = False
-        self._game_parameters_type = game_parameters_type
+        self._game_parameters_type:GameParametersType = game_parameters_type
         self._started = False
         self._game_id = game_id
         self._types_to_omit:List[CardType] = []    # CardTypes to omit when drawing. 
         self._round = 0    # the current round number
+        self._genre:GenreType = GenreType.UNASSIGNED
+        self._play_mode:PlayMode = PlayMode.UNASSIGNED
     
     @property
     def game_id(self):
@@ -166,6 +168,22 @@ class GameState(StoriesObject):
     @round.setter
     def round(self, value:int):
         self._round = value
+    
+    @property
+    def genre(self)->GenreType:
+        return self._genre
+    
+    @genre.setter
+    def genre(self, value:GenreType|str):
+        self._genre = value if isinstance(value, GenreType) else GenreType[value.upper()]
+        
+    @property
+    def play_mode(self)->PlayMode:
+        return self._play_mode
+    
+    @play_mode.setter
+    def play_mode(self, value:PlayMode|str):
+        self._play_mode = value if isinstance(value, PlayMode) else PlayMode[value.upper()]
         
     @property
     def types_to_omit(self)->List[CardType]:
@@ -288,11 +306,12 @@ class GameState(StoriesObject):
         gs["turn_number"] = self.turn_number
 
         gs["total_points"] = self.total_points
-
         gs["elapsed_time"] = self.get_elapsed_time()
         if self.winning_player is not None:
             gs["winning_player"] = self.winning_player.player_initials
         gs["game_complete"] = self.game_complete
+        gs["genre"] = self.genre.value
+        gs["play_mode"] = self.play_mode.value
 
         players = []
         for player in self.players:

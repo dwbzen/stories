@@ -769,58 +769,83 @@ class GameEngineCommands(object):
         next_player.add_card(story_card)
         return CommandResult(CommandResult.SUCCESS, f"Card #{card_number} removed from {player.player_initials}'s hand and given to {next_player.player_initials}")
 
-    def list(self, what='hand', initials:str='me', how='numbered') ->CommandResult:
+    def list(self, what='hand', initials:str='me', how='numbered', display_format='text') ->CommandResult:
         """List the cards held by the current player
             Arguments: what - 'hand', 'story'
                 initials - a player's initials, defaults to the current player "me"
                 how - 'numbered' for a numbered list, 'regular', the default, for no numbering
-            Returns: CommandResult.message is the stringified list of str(card) in the player's hand or story
-            By default when what=="hand", the lines are sorted by CardType:
-             ACTION, TITLE, OPENING, OPENING_STORY, STORY, CLOSING, and number
+                display_format - 'text' or 'json'
+                
+            Returns: CommandResult.message. If display_format == 'text', this is the stringified list of str(card) in the player's hand or story
+            If 'json', the message contains the to_JSON with no indent.
+            By default when what=="hand", the lines are sorted by CardType: ACTION, TITLE, OPENING, OPENING_STORY, STORY, CLOSING, and number
             
         """
         # TODO
         player = self.game_state.current_player if initials=="me" else self.get_player(initials)
-        done_flag = True
         return_code = CommandResult.SUCCESS
         if what == 'hand':
-            message = self._list(player.story_card_hand, how, sort_list=True)
+            message = self._list(player.story_card_hand, how, sort_list=True, display_format=display_format)
         elif what == 'story':
-            message = self._list(player.story_card_hand.my_story_cards, how)
+            result = self.read(how, initials, display_format)
+            return result
         else:
-            message = f"I don't understand {what}"
-            done_flag = False
+            message = f"I don't understand what '{what}' is"
             return_code = CommandResult.ERROR
         
-        return CommandResult(return_code, message, done_flag)
+        return CommandResult(return_code, message)
     
-    def _list(self, story_card_hand, how:str, sort_list=False) ->str:
+    def _list(self, story_card_hand, how:str, sort_list=False, display_format='text') ->str:
         """List the cards in a player's StoryCardHand
            Arguments:
                story_card_hand - a player's StoryCardHand
                how - "numbered" to number the entries (1 through #cards)
                sort_list - if True the list will be sorted by CardType.
+               display_format - 'text' or 'json'
             Returns: the list as a string
             The card with the number == last_card_drawn_number is highlighted with an "*"
             @see StoryCardHand.sort()
         """
+        last_drawn = story_card_hand.last_card_drawn_number
+        if sort_list:
+            cards = story_card_hand.sort()    # StoryCardList
+        else:
+            cards = story_card_hand.cards.cards
         if how=="numbered":
             n = 1
-            if sort_list:
-                cards = story_card_hand.sort()    #StoryCardList
+            if display_format == 'text':
+                card_text = ""
+                for card in cards:
+                    tag = "*" if card.number == last_drawn else ""
+                    card_text = card_text + f"{tag}{n}. {str(card)}"
+                    n += 1
+            elif display_format == 'json':
+                card_text = GameEngineCommands.to_JSON(cards, last_drawn, numbered=True)
             else:
-                cards = story_card_hand.cards.cards
+                card_text = f"I don't understand what '{display_format}' is"
                 
-            card_text = ""
-            last_drawn = story_card_hand.last_card_drawn_number
-            for card in cards:
-                tag = "*" if card.number == last_drawn else " "
-                card_text = card_text + f"{tag}{n}. {str(card)}"
-                n += 1
-        else:
-            card_text = str(story_card_hand.cards)
+        else:    # not numbered
+            if display_format == 'text':
+                card_text = str(story_card_hand.cards)
+            elif display_format == 'json':
+                card_text = GameEngineCommands.to_JSON(cards, last_drawn, numbered=False)
+            else:
+                card_text = f"I don't understand what '{display_format}' is"           
             
         return card_text
+    
+    @staticmethod
+    def to_JSON(cards:List[StoryCard], last_drawn:int, numbered:bool=True):
+        cards_list = []
+        n = 1
+        for story_card in cards:
+            tag = "*" if story_card.number == last_drawn else " "
+            card_text = f"{tag}{n}. {story_card.card_type.value}: {story_card.number}. {story_card.text}"
+            cards_list.append(card_text.strip())
+            n += 1
+        cards_dict = {"cards" : cards_list}
+        message = json.dumps(cards_dict)
+        return message
     
     def _get_card_number_from_list(self, player, ordinal, sort_list=True):
         """Returns the number of the card in the players hand at a given ordinal position (starting with 1)
@@ -927,7 +952,7 @@ class GameEngineCommands(object):
         
         return result
         
-    def read(self, numbered:bool, initials:str=None)->CommandResult:
+    def read(self, numbered:bool, initials:str=None, display_format='text')->CommandResult:
         """Display a player's story in a readable format.
             Arguments:
                 numbered - if True number the lines starting at 1 with the first story card.
@@ -962,7 +987,7 @@ class GameEngineCommands(object):
 
         return CommandResult(return_code, message)
 
-    def save_game(self, gamefile_base_name:str, game_id:str, how='json') -> CommandResult:
+    def save_game(self, gamefile_base_name:str, game_id:str, how='json', source='mongo') -> CommandResult:
         """Save the complete serialized game state so it can be restarted at a later time.
             Arguments:
                 how - serialization format to use: 'json', 'jsonpickle' or 'pkl' (pickle)
@@ -971,8 +996,15 @@ class GameEngineCommands(object):
         """
         extension = 'pkl' if how=='pkl' else 'json'
         filename = f'{gamefile_base_name}.{extension}'      # folder/filename
-        
-        return CommandResult(CommandResult.SUCCESS, "save game not yet implemented - but soon!")
+        result = CommandResult()
+        if how=="json":
+            result.message = "save game (JSON) not yet implemented - but soon!"
+        elif how=='pkl':
+            result.message = "save game (pkl) not yet implemented - but soon!"
+        else:
+            result.message = f"Unknown format {how}"
+            result.return_code = CommandResult.ERROR
+        return result
         
     
     def status(self, initials:str=None)->CommandResult:

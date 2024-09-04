@@ -16,6 +16,7 @@ class GenreType(Enum):
     HORROR = "horror"
     NOIR = "noir"
     ROMANCE = "romance"
+    UNASSIGNED = "unassigned"       # use this instead of None
 
 class CardType(Enum):
     TITLE = "Title"
@@ -79,17 +80,18 @@ class ParameterType(Enum):
     RANDOMIZE_PICKS =       "randomize_picks"
     DATE_FORMAT =           "date_format"
     
-    
 class PlayMode(Enum):
     INDIVIDUAL = "individual"
     TEAM = "team"
     COLLABORATIVE = "collaborative"
+    UNASSIGNED = "unassigned"       # use this instead of None
     
 class PlayerRole(Enum):
     PLAYER = "player"               # INDIVIDUAL or COLLABORATIVE PlayMode 
     TEAM_MEMBER = "team_member"     # TEAM PlayMode
     TEAM_LEAD = "team_lead"         # TEAM PlayMode
     DIRECTOR = "director"           # COLLABORATIVE PlayMode
+    UNASSIGNED = "unassigned"       # Role not yet assigned to this player
 
 class GameConstants(object):
     '''
@@ -98,7 +100,7 @@ class GameConstants(object):
     COMMANDS = [
             'add', 'add_team', 'deal', 'discard', 'done', 'draw', 'end', 
             'find', 'game_status', 'help', 'info', 'insert', 
-            'list', 'list_numbered', 'ln', 'log_message', 'ls', 
+            'list', 'list_numbered', 'ln', 'lnj', 'log_message', 'ls', 
             'next', 'play', 'play_type', 'rank', 'read', 'rn', 'replace',
             'save', 'set', 'show', 'start', 'status', 'team_info', 'update' ]
     

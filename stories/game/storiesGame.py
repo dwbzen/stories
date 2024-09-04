@@ -66,6 +66,8 @@ class StoriesGame(StoriesObject):
         # create & initialize the GameState which includes a list of Players
         #
         self._game_state = GameState(self._game_id, total_points, self._game_parameters_type)
+        self._game_state.genre = self._genre
+        self._game_state.play_mode = self._play_mode
         self.game_duration = 0
         self.round_durations:List[int] = []
 

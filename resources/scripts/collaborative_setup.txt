@@ -2,7 +2,7 @@
 # --loglevel debug --genre horror --params test --delay 0 --playmode collaborative   
 # --script  /Users/dwbze/OneDrive/Documents/Compile/stories/resources/scripts/collaborative_setup.txt
 #
-add player Don DWB Don dwbzen@gmail.com
+add player Don DWB dwbzen dwbzen@gmail.com
 add director Don DWB
 start game
 

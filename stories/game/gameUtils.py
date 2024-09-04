@@ -82,8 +82,8 @@ class GameUtils(object):
     @staticmethod
     def create_guid(installation_id="") ->str:
         today = datetime.now()
-        gid = '{0:d}{1:02d}{2:02d}_{3:02d}{4:02d}{5:02d}_{6:06d}_{7:05d}'\
-            .format(today.year, today.month, today.day, today.hour, today.minute, today.second, today.microsecond, random.randint(10000,99999))
+        gid = '{0:d}{1:02d}{2:02d}_{3:02d}{4:02d}_{5:04d}'\
+            .format(today.year, today.month, today.day, today.hour, today.minute, random.randint(1,9999))
         return f"{installation_id}_{gid}"
     
     @staticmethod
