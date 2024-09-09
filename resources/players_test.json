@@ -1,0 +1,11 @@
+{
+    "id": "9e281dbe-4868-42ab-a055-58b3143a4a95",
+    "name": "tester",
+    "initials": "bb",
+    "email": "blah@blah.com",
+    "login_id": "abc123",
+    "phone": "555-555-5555",
+    "play_level": "free",
+    "active": true,
+    "createdDate": "2024-09-08T22:07:09.217902"
+  }
