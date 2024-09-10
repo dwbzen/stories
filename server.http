@@ -1,0 +1,1 @@
+GET http://localhost:3001/game/abc123/user/123/list HTTP/1.1

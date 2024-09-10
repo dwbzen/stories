@@ -5,12 +5,26 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: FastAPI",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "uvicorn",
+            "args": [
+                "app:app",
+                "--reload"
+            ],
+            "jinja": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/stories"
+            }
+        },
+        {
             "name": "Python Debugger: Flask",
             "type": "debugpy",
             "request": "launch",
             "module": "flask",
             "env": {
-                "FLASK_APP": "stories/server/server.py",
+                "FLASK_APP": "stories/app.py",
                 "FLASK_DEBUG": "1",
                 "PYTHONPATH": "${workspaceFolder}/stories"
             },
@@ -24,12 +38,12 @@
             "autoStartBrowser": false,
         },
         {
-            "name": "Python Debugger: Current File with Arguments",
+            "name": "Python Game Runner",
             "type": "debugpy",
             "request": "launch",
             "program": "stories/game/gameRunner.py",
             "console": "integratedTerminal",
-            "args": "--loglevel debug --genre horror --params test  --nplayers 2 --names Don,Brian",
+            "args": "--loglevel debug --genre horror --params test --nplayers 2 --names Don,Brian",
             "cwd": "${workspaceFolder}",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}/stories"
