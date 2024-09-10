@@ -25,7 +25,7 @@ RUN python -m pip install -e .
 
 USER root
 
-WORKDIR /app/stories/server
+WORKDIR /app/stories
 #RUN echo 'DB_URL=mongodb://root:rootpassword@localhost' > .env
 
-CMD ["uvicorn", "--port", "9000", "--host", "0.0.0.0",  "server:app"]
+CMD ["uvicorn", "--port", "9000", "--host", "0.0.0.0",  "app:app"]
