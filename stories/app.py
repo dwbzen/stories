@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from game.storiesGameEngine import StoriesGameEngine
 from game.storiesGame import StoriesGame
 
-from server.gameManager import StoriesGameManager, Game, GameInfo
+from server.gameManager import StoriesGameManager, Game, GameInfo, CardInfo, PlayerInfo
 from server.playerManager import StoriesPlayer, StoriesPlayerManager
 
 gameManager = StoriesGameManager()
@@ -34,6 +34,12 @@ def info(initials:str, response: Response)->StoriesPlayer:
 def create_player(player:StoriesPlayer)->StoriesPlayer:
     print(player)
     return playerManager.create_player(player)
+
+@app.post("/add/", status_code=200)
+def add_player(playerInfo:PlayerInfo)->PlayerInfo:
+    """Adds an existing player to a given game
+    """
+    return gameManager.add_player_to_game(playerInfo)
 
 @app.post('/game/', status_code=201)
 def createGame(gameInfo:GameInfo, response: Response)->Game:
@@ -60,6 +66,20 @@ def list_cards(gameId, initials:str,  response:Response):
         response.status_code = status.HTTP_404_NOT_FOUND
     return cards
 
+@app.post('/play/', status_code=201)
+def play_card(card_info:CardInfo):
+    result = gameManager.play_card(card_info.game_id, card_info.card_number, card_info.action_args)
+    return result
+
+@app.get('/draw/{gameId}/{initials}', status_code=200)
+def draw_card(gameId, initials:str,  response:Response):
+    card = gameManager.draw_card(gameId, initials)
+    return card
+
+@app.get("/read/{gameId}/{initials}", status_code=200)
+def read_story(gameId, initials:str,  response:Response):
+    thestory = gameManager.read_story(gameId, initials)
+    return thestory
 
 @app.get("/game/{gameId}", status_code=200)
 def get(gameId:str):

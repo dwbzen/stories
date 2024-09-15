@@ -6,5 +6,6 @@ add player Don DWB dwbzen dwbzen@gmail.com
 add director Don DWB
 start game
 
+add player Scott SFP Scott scotty121382@yahoo.com
 # DWB
-# director can add players
+# director can add more players

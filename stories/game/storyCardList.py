@@ -206,4 +206,4 @@ class StoryCardList(StoriesObject):
         return self.to_JSON(indent=2)
     
     def to_JSON(self, indent=2):
-        return json.dumps(self.to_dict(), indent)
+        return json.dumps(self.to_dict(), indent=indent)

@@ -422,7 +422,7 @@ class GameEngineCommands(object):
             
         return message
         
-    def draw(self, what:str, action_type:ActionType) ->CommandResult:
+    def draw(self, what:str, action_type:ActionType, initials=None) ->CommandResult:
         """Draw a card from the deck OR from the top of the global discard deck
                 what - what to draw or where to draw from:
                        new - draw a card from the main card deck
@@ -430,6 +430,7 @@ class GameEngineCommands(object):
                        <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
                 action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
                         "stir_pot", "draw_new", "change_name"
+                initials - optional player id (initials or id)
             Returns:
                 CommandResult with return_code set to SUCCESS or ERROR (if there are no cards left to draw from),
                     and message set to an error message OR if SUCCESS, the card_type drawn.
@@ -437,7 +438,7 @@ class GameEngineCommands(object):
             Note game_state.types_to_omit is a List[CardType] to omit drawing. This is set globally
             for example when all players have played a Title card, a Title card will no longer be drawn.
         """
-        player = self.game_state.current_player 
+        player = self.game_state.current_player if initials is None else self.get_player(initials)
         return self.draw_for(player, what, action_type)
     
     def draw_for(self, player:Player, what:str, action_type:ActionType=None, ordinal:int=1)->CommandResult:
@@ -450,7 +451,8 @@ class GameEngineCommands(object):
                        <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
                 action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
                         "stir_pot", "draw_new", "change_name"
-                        
+            Returns:
+                CommandResult with properties "number" and "text" which have the StoryCard.number and .text respectively.
             The last_card_drawn_number in the player's story_card_hand is also updated with the new card's number.
             @see StoriesGame.draw_card() 
         """
@@ -458,11 +460,14 @@ class GameEngineCommands(object):
         if card is None:    # must be an error, message has the error message
             result = CommandResult(CommandResult.ERROR, message, done_flag=False)
         else:
-            # add this drawn card to the player hand
-            player._story_card_hand.add_card(card)
-            player.card_drawn = True
-            message = f"{ordinal}. {player.player_initials} drew a {card.card_type.value} ({card.number}): {card.text}"
-            result = CommandResult(CommandResult.SUCCESS, message, properties={"number": str(card.number)})
+            if player is None:
+                result = CommandResult(CommandResult.ERROR, "Player not found")
+            else:
+                # add this drawn card to the player hand
+                player._story_card_hand.add_card(card)
+                player.card_drawn = True
+                message = f"{ordinal}. {player.player_initials} drew a {card.card_type.value} ({card.number}): {card.text}"
+                result = CommandResult(CommandResult.SUCCESS, message, properties={"number": str(card.number), "text": str(card)}  )
             
         return result
 
@@ -525,7 +530,10 @@ class GameEngineCommands(object):
                     message = f"Invalid line number: {ordinal}"
                     result = CommandResult(CommandResult.ERROR, message, False)
                     return result
-        else:
+            else:
+                card_number = int(card_id)
+                
+        else:    # card_id is an int
             card_number = card_id
             
         story_card = player.story_card_hand.get_card(card_number)
@@ -958,6 +966,8 @@ class GameEngineCommands(object):
                 numbered - if True number the lines starting at 1 with the first story card.
                         The Title and Closing line(s) are not numbered.
                 initials - the player's initials if other than the current player
+                display_format - "text", "json" or "dict"
+                
             In a COLLABORATIVE game mode the Director maintains the common story.
             In TEAM Play, the player's team lead maintains the story for the team.
         """
@@ -982,10 +992,13 @@ class GameEngineCommands(object):
                 message = f"{result.message}\nA team lead is required for team games. Please add one to team '{team_name}'"   
                 return_code = CommandResult.WARNING
         
-        else:
+        props = player.story_card_hand.my_story_cards.to_dict()    # key is "cards" 
+        if display_format == "text":
             message = player.story_card_hand.my_story_cards.to_string(numbered)
+        elif display_format == "json" or display_format == "dict":
+            message = player.story_card_hand.my_story_cards.to_JSON(indent=0)
 
-        return CommandResult(return_code, message)
+        return CommandResult(return_code, message, properties=props)
 
     def save_game(self, gamefile_base_name:str, game_id:str, how='json', source='mongo') -> CommandResult:
         """Save the complete serialized game state so it can be restarted at a later time.

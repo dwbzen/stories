@@ -295,9 +295,9 @@ class GameState(StoriesObject):
         players = [p for p in self.players if p.my_team_name == team_name]
         return players
 
-    def to_JSON(self):
+    def to_JSON(self, indent=2):
         gs = self.to_dict()
-        return json.dumps(gs, indent=2)
+        return json.dumps(gs, indent=indent) if indent>0 else json.dumps(gs)
     
     def to_dict(self) -> dict:
         gs = {"game_id" : self._game_id, "game_parameters_type" : self.game_parameters_type.value, \

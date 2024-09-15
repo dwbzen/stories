@@ -1,0 +1,66 @@
+[{
+  "id": "7fd1fc98-5c16-4cf3-a75f-cd3950887d4c",
+  "name": "Cheryl",
+  "initials": "CJL",
+  "email": "lister.cheryl@gmail.com",
+  "login_id": "cjlister",
+  "phone": "8133092834",
+  "play_level": "free",
+  "number": 0,
+  "active": true,
+  "genres" : ["horror", "noir"],
+  "createdDate": "2024-08-31T10:44:51.708015",
+  "player_role": "unassigned"
+},
+{
+  "id": "1c2b7791-7ec6-4871-aec2-fda2b1984b6b",
+  "name": "Don",
+  "initials": "DWB",
+  "email": "dwbzen@gmail.com",
+  "login_id": "dwbzen",
+  "phone": "7275150501",
+  "play_level": "elite",
+  "number": 0,
+  "active": true,
+  "genres" : ["horror", "noir"],
+  "createdDate": "2024-08-31T10:44:51.708015"
+},
+{
+  "id": "f9df6ab3-f4b1-4041-9cc9-67a016081ab6",
+  "name": "Brian",
+  "initials": "BDB",
+  "email": "brian.bacon01@gmail.com",
+  "login_id": "jomama",
+  "phone": "5852695670",
+  "play_level": "free",
+  "number": 0,
+  "active": true,
+  "genres" : ["horror", "noir"],
+  "createdDate": "2024-08-31T10:44:51.708015"
+},
+{
+  "id": "cac5669e-42d1-4cec-b44e-686e72eb7c34",
+  "name": "Beth",
+  "initials": "EJB",
+  "email": "beth.bacon01@hotmail.com",
+  "login_id": "bethbacon",
+  "phone": "5855551212",
+  "play_level": "elite",
+  "number": 0,
+  "active": true,
+  "genres" : ["horror", "noir"],
+  "createdDate": "2024-09-01T12:51:04.940404"
+},
+{
+  "id": "f56074ac-72fa-434e-8a6a-75e94d69080c",
+  "name": "Scott",
+  "initials": "SFP",
+  "email": "scotty121382@yahoo.com",
+  "login_id": "scottpowell",
+  "phone": "3608315131",
+  "play_level": "elite",
+  "active": true,
+  "genres" : ["horror"],
+  "createdDate": "2024-09-10T11:46:39.043134"
+}
+]

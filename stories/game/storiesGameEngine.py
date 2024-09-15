@@ -184,10 +184,10 @@ class StoriesGameEngine(object):
             print(message, file=sys.stderr)
         return command_result
         
-    def game_status(self) -> CommandResult:
+    def game_status(self, indent=2) -> CommandResult:
         """Get information about the current game in progress and return in JSON format
         """
-        message =  self.game_state.to_JSON() if self.game_state is not None else "Undefined GameState"
+        message =  self.game_state.to_JSON(indent=indent) if self.game_state is not None else "Undefined GameState"
         return CommandResult(CommandResult.SUCCESS, message=message)
     
     @property
@@ -316,7 +316,7 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.done()
     
-    def draw(self, what:str="new", action_type_value:str=None) ->CommandResult:
+    def draw(self, what:str="new", action_type_value:str=None, initials=None) ->CommandResult:
         """Draw a card from the deck, or from the top of the global discard deck, or a specific card type
             Arguments:
                 what - what to draw or where to draw from:
@@ -325,13 +325,14 @@ class StoriesGameEngine(object):
                        <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
                 action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
                         "stir_pot", "draw_new", "change_name"
+                initials - optional player id (initials or id)
             Note that the following action_types are NOT VALID in COLLABORATIVE game play: "trade_lines" and "steal_lines"
         """
         action_type = None
         if action_type_value is not None:
             if action_type_value in self.stories_game.story_card_deck.action_types:
                 action_type:ActionType = ActionType[action_type_value.upper()]
-                result = self._gameEngineCommands.draw(what, action_type)
+                result = self._gameEngineCommands.draw(what, action_type, initials=initials)
             else:
                 message = f"No cards available for '{action_type_value}'"
                 result = CommandResult(CommandResult.ERROR, message)

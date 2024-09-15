@@ -7,6 +7,7 @@ Created on Aug 12, 2024
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from uuid import uuid4
+from typing import List
 
 import dotenv
 import pymongo
@@ -23,6 +24,7 @@ class StoriesPlayer(BaseModel):
     phone:str = Field(...)
     play_level:str = Field(default="free")
     active:bool = Field(default=True)
+    genres:List[str] = Field(default=[])    # the genres this player can access
     createdDate: datetime = Field(default=datetime.now())
 
 class StoriesPlayerManager(object):
@@ -62,7 +64,7 @@ class StoriesPlayerManager(object):
         return self.collection.find_one({"_id": playerId})
     
     def getUserByInitials(self, initials:str)->StoriesPlayer:
-        info = self.collection.find_one({"initials": initials})
+        info = self.collection.find_one({"initials": initials})    # returns the MongoDB players record as a Dict
         if info is not None:
             player = StoriesPlayer(**info)
         else:    # try upper case
@@ -79,3 +81,13 @@ class StoriesPlayerManager(object):
     
     def updateUser(self, player: StoriesPlayer):
         self.collection.update_one({"_id": player['_id']}, {"$set": {'number': player["number"]}})
+
+def main():
+    # quick test
+    playerManager = StoriesPlayerManager()
+    storiesPlayer = playerManager.getUserByInitials("dwb")
+    print(storiesPlayer)
+    
+
+if __name__ == '__main__':
+    main()
