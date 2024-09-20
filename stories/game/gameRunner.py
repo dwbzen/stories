@@ -12,7 +12,7 @@ from game.gameConstants import GameParametersType, PlayMode
 
 from typing import List
 import argparse, time
-import logging
+import logging, sys
 
 
 class GameRunner(object):
@@ -344,6 +344,7 @@ def main():
         
     game_runner.execute_command("start game", current_player)
     game_runner.run_game()
+    sys.exit()
 
 if __name__ == '__main__':
     main()

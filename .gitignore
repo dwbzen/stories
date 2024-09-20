@@ -10,4 +10,5 @@ portals.egg-info
 .pydevproject
 .project
 .venv
+pyenv
 stories.egg-info

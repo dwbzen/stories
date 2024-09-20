@@ -1,11 +1,13 @@
 {
-    "id": "9e281dbe-4868-42ab-a055-58b3143a4a95",
-    "name": "tester",
-    "initials": "bb",
-    "email": "blah@blah.com",
-    "login_id": "abc123",
-    "phone": "555-555-5555",
-    "play_level": "free",
-    "active": true,
-    "createdDate": "2024-09-08T22:07:09.217902"
+  "id": "1c2b7791-7ec6-4871-aec2-fda2b1984b6b",
+  "name": "Don",
+  "initials": "DWB",
+  "email": "dwbzen@gmail.com",
+  "login_id": "dwbzen",
+  "phone": "7275150501",
+  "play_level": "elite",
+  "number": 0,
+  "active": true,
+  "genres" : ["horror", "noir"],
+  "player_role": "unassigned"
   }

@@ -303,6 +303,10 @@ class StoriesGameEngine(object):
         result = self._gameEngineCommands.end(what)
         return result
     
+    def exit(self, message):
+        self.log_message(f"exiting game: {message}")
+        sys.exit()
+    
     def find(self, card_type:str, action_type:str=None)->CommandResult:
         return self._gameEngineCommands.find(card_type, action_type)
     
@@ -330,6 +334,7 @@ class StoriesGameEngine(object):
         """
         action_type = None
         if action_type_value is not None:
+            
             if action_type_value in self.stories_game.story_card_deck.action_types:
                 action_type:ActionType = ActionType[action_type_value.upper()]
                 result = self._gameEngineCommands.draw(what, action_type, initials=initials)
@@ -485,6 +490,7 @@ class StoriesGameEngine(object):
     
     def help(self, command_name:str=None) ->CommandResult:
         """Display valid commands or details on a specific command
+        TODO add help for individual card_types (Title, Story etc.) and action_types (meanwhile, draw_new, etc.)
         """
         if command_name is None:
             cmds = self.stories_game.story_card_deck.commands

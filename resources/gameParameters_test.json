@@ -8,7 +8,7 @@
 	"randomize_picks" : 0,
 	"story_length" : 4,
 	"max_cards_in_hand": 10,
-	"automatic_draw": 1,
+	"automatic_draw": 0,
 	"round_points" : {"1" : 5, "2" : 3, "3" : 1, "4" : 0},
 	"character_alias" : {"Michael" : "Don", "Nick" : "Brian", "Samantha" : "Cheryl", "Vivian" : "Beth"},
 	"DB_URL" : "mongodb://localhost:27017/",

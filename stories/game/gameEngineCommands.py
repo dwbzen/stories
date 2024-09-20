@@ -297,6 +297,7 @@ class GameEngineCommands(object):
             npn = self.game_state.set_next_player()
             next_player = self.game_state.current_player
             result.message = f"{result.message}. {next_player.player_initials}'s turn, player# {npn}."
+            result.properties = {"playerId" : next_player.player_initials}
         else:
             pass
 
@@ -554,6 +555,7 @@ class GameEngineCommands(object):
                     director:Player = result.properties["director"]
                     player.remove_card(card_number)
                     director.add_card(story_card)
+                    self.log(f"director: {director.player_initials} player: {player.player_initials}")
                     result = self._play_card(director, story_card, as_player=player)
                 else:
                     result.message = f"{result.message}\nA Director is required for collaborative games. Please add one."
@@ -992,7 +994,7 @@ class GameEngineCommands(object):
                 message = f"{result.message}\nA team lead is required for team games. Please add one to team '{team_name}'"   
                 return_code = CommandResult.WARNING
         
-        props = player.story_card_hand.my_story_cards.to_dict()    # key is "cards" 
+        props = player.story_card_hand.my_story_cards.to_dict(how="condensed")    # key is "cards" 
         if display_format == "text":
             message = player.story_card_hand.my_story_cards.to_string(numbered)
         elif display_format == "json" or display_format == "dict":

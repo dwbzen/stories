@@ -215,7 +215,7 @@ class StoriesGame(StoriesObject):
                        "new" - draw a card from the main card deck
                        "discard" - draw the top of the global discard deck
                        <type> - any of: "title", "opening", "opening/story", "story", "closing", "action"
-                action_type - if what == "action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
+                action_type - if what == "Action", the ActionType to draw: "meanwhile", "trade_lines", "steal_lines",
                         "stir_pot", "draw_new", "change_name"
             Returns:
                 A Tuple(StoryCard, str). If StoryCard is None, the str returned is an error message
@@ -229,10 +229,10 @@ class StoriesGame(StoriesObject):
             card = self.story_card_deck.draw_new(types_to_omit)
         elif what.lower() == 'discard' and len(self._story_discard_deck) > 0:
             #
-            # draw the top card from the right side of the discard deque
+            # draw the top card from the right side of the discard dequeue
             #
             card = self.pop_discard()
-        elif what in self.story_card_deck.card_types_list:    # "title", "opening", "opening/story", "story", "closing", "action"
+        elif what.title() in self.story_card_deck.card_types_list:    # "Title", "Opening", "Opening/Story", "Story", "Closing", "Action"
             #
             # draw the next occurrence of this CardType
             #

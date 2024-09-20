@@ -171,10 +171,20 @@ class StoryCardList(StoriesObject):
             counts.update( {card_type : n+1} )
         return counts
     
-    def to_dict(self)->dict:
+    def to_dict(self, how="full")->dict:
         """Returns the cards as a Dict
+            Arguments:
+                how = "full" to include all StoryCard attributes
+                      "condensed" to create a str representation of each card
         """
-        cards = [x.to_dict() for x in self._cards]
+        if how == "full":
+            cards = [x.to_dict() for x in self._cards]
+        else:
+            cards = []
+            i = 1
+            for card in self._cards:
+                cards.append(f"{i}. {card.card_type.value}: {card.number}. {card.text}")
+                i+=1
         deck_dict = {"cards" : cards}
         return deck_dict
     

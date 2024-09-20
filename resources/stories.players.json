@@ -9,7 +9,6 @@
   "number": 0,
   "active": true,
   "genres" : ["horror", "noir"],
-  "createdDate": "2024-08-31T10:44:51.708015",
   "player_role": "unassigned"
 },
 {
@@ -23,7 +22,7 @@
   "number": 0,
   "active": true,
   "genres" : ["horror", "noir"],
-  "createdDate": "2024-08-31T10:44:51.708015"
+  "player_role": "unassigned"
 },
 {
   "id": "f9df6ab3-f4b1-4041-9cc9-67a016081ab6",
@@ -36,7 +35,7 @@
   "number": 0,
   "active": true,
   "genres" : ["horror", "noir"],
-  "createdDate": "2024-08-31T10:44:51.708015"
+  "player_role": "unassigned"
 },
 {
   "id": "cac5669e-42d1-4cec-b44e-686e72eb7c34",
@@ -49,10 +48,10 @@
   "number": 0,
   "active": true,
   "genres" : ["horror", "noir"],
-  "createdDate": "2024-09-01T12:51:04.940404"
+  "player_role": "unassigned"
 },
 {
-  "id": "f56074ac-72fa-434e-8a6a-75e94d69080c",
+  "id": "a53e0ee4-a55a-4bee-bfae-be9c7646c304",
   "name": "Scott",
   "initials": "SFP",
   "email": "scotty121382@yahoo.com",
@@ -61,6 +60,6 @@
   "play_level": "elite",
   "active": true,
   "genres" : ["horror"],
-  "createdDate": "2024-09-10T11:46:39.043134"
+  "player_role": "unassigned"
 }
 ]

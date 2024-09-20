@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from game.storiesGameEngine import StoriesGameEngine
 from game.storiesGame import StoriesGame
 
-from server.gameManager import StoriesGameManager, Game, GameInfo, CardInfo, PlayerInfo
+from server.gameManager import StoriesGameManager, Game, GameInfo, CardInfo, PlayerInfo, GameID
 from server.playerManager import StoriesPlayer, StoriesPlayerManager
 
 gameManager = StoriesGameManager()
@@ -80,6 +80,14 @@ def draw_card(gameId, initials:str,  response:Response):
 def read_story(gameId, initials:str,  response:Response):
     thestory = gameManager.read_story(gameId, initials)
     return thestory
+
+@app.put("/next/", status_code=201)
+def nextPlayer(gameID:GameID):
+    return gameManager.next_player(gameID)
+
+@app.post("/end/", status_code=201)
+def endGame(gameID:GameID):
+    return gameManager.end_game(gameID)
 
 @app.get("/game/{gameId}", status_code=200)
 def get(gameId:str):

@@ -7,7 +7,7 @@ Created on Aug 12, 2024
 from fastapi.encoders import jsonable_encoder
 import pymongo
 from typing import Dict, List
-import json
+import json, copy
 import dotenv
 import string
 from uuid import uuid4
@@ -57,6 +57,12 @@ class GameInfo(BaseModel):
     # set to True when a 'start' command is issued
     active:bool = Field(default=False)
     players: List[str] = Field(default=[])
+
+class GameID(BaseModel):
+    game_id:str = Field(...)
+    playerId:str = Field(default=None)    # depending on context, player issuing the command, or next player
+    message:str = Field(default=None)
+    error_code:int = Field(default=0)
 
 class PlayerInfo(BaseModel):
     game_id:str = Field(...)
@@ -240,6 +246,32 @@ class StoriesGameManager(object):
             props = {"error_code" : 1, "message" : "invalid gameId"}
             
         return props
+    
+    def next_player(self, gameID:GameID)->dict:
+        np = {"game_id" : gameID.game_id}
+        if gameID.game_id in self.games:
+            game_engine:StoriesGameEngine = self.games[gameID.game_id]
+            result = game_engine.next()
+            np["message"] = result.message
+            np["playerId"] = result.properties["playerId"]
+        else:
+            result = CommandResult(CommandResult.ERROR, "invalid GameId")
+            np["error_code"] = 1
+            np["message"] =  f"invalid GameId: {gameID.game_id}"
+            
+        return np
+    
+    def end_game(self, gameID:GameID):
+        result = {"game_id" : gameID.game_id}
+        if gameID.game_id in self.games:
+            game_engine:StoriesGameEngine = self.games[gameID.game_id]
+            eng_result = game_engine.end(what="game")
+        else:
+            eng_result = CommandResult(CommandResult.ERROR, f"invalid GameId: {gameID.game_id}")
+        result["message"] = eng_result.message
+        result["return_code"] = eng_result.return_code
+
+        return result
     
     def get_game(self, id:str)->GameInfo:
         """TODO
