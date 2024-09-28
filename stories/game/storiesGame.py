@@ -47,9 +47,10 @@ class StoriesGame(StoriesObject):
         self._resource_folder = self._env.get_resource_folder()     # base resource folder for example, "/Compile/stories/resources"
         self._data_source = data_source
         #
-        # load game parameters and story cards from the specified source
+        # load game parameters, story cards and the story card template from the specified source
         #
-        self._data_manager = DataManager(data_source, game_parameters_type, genre)    # the init loads the game parameters 
+        self._data_manager = DataManager(data_source, game_parameters_type, genre, load_all=True)
+        
         self._game_parameters = self._data_manager.game_parameters
         self._play_mode = play_mode    # INDIVIDUAL, TEAM, or COLLABORATIVE PlayMode
         
@@ -207,6 +208,7 @@ class StoriesGame(StoriesObject):
             TODO - tally points & sort players by points using "round_points" game parameter
         """
         self.game_duration = self.game_state.get_elapsed_time()
+        self._end_datetime = datetime.today()
         return self.game_duration
     
     def draw_card(self, what:str, action_type:ActionType|None) ->tuple :

@@ -23,6 +23,7 @@ class StoriesPlayer(BaseModel):
     login_id:str = Field(default=None)
     phone:str = Field(...)
     play_level:str = Field(default="free")
+    permission_level:str = Field(default="user")    # "user", "admin", "super_user"
     active:bool = Field(default=True)
     genres:List[str] = Field(default=[])    # the genres this player can access
     createdDate: datetime = Field(default=datetime.now())
@@ -79,7 +80,7 @@ class StoriesPlayerManager(object):
     def deleteUser(self, playerId: str):
         self.collection.delete_one({"_id": playerId})
     
-    def updateUser(self, player: StoriesPlayer):
+    def updateUser(self, player:StoriesPlayer):
         self.collection.update_one({"_id": player['_id']}, {"$set": {'number': player["number"]}})
 
 def main():

@@ -9,6 +9,7 @@ import json
 import pymongo
 import argparse
 import dotenv
+from datetime import datetime
 from game.gameConstants import GameParametersType, GenreType
 from game.gameParameters import GameParameters
 from game.commandResult import CommandResult
@@ -24,12 +25,13 @@ class DataManager(object):
         Stories game has 2 Mongo databases: stories and genres.
     """
 
-    def __init__(self, source:str, game_parameters_type:str, genre:str):
+    def __init__(self, source:str, game_parameters_type:str, genre:str, load_all:bool=False):
         """Construct a stateful DataManager
             Arguments:
                 source - the data source: "text", for .txt files, or "mongo" for MongoDB
                 game_parameters_type - "test", "prod", "custom"
                 genre - "horror", "noir" or "romance"
+                load_all - if True, load game parameters, story card template and story cards. Default is False.
         """
         self._source = source
         self._genre = GenreType[genre.upper()]
@@ -47,7 +49,7 @@ class DataManager(object):
                 self.active = False
                 print(result.message)
                 self._game_parameters = None
-        if self.active:
+        if load_all and self.active:
             self.load_parameters(source, game_parameters_type)
             self.load_story_card_template(source, self._genre, game_parameters_type)
             self.load_story_cards()
@@ -168,6 +170,29 @@ class DataManager(object):
                 result.message = f"Unable to load templates from DB for {game_parameters_type}"
                 
         self._story_card_template = story_card_template
+        
+        return result
+    
+    def update_game(self, game_id:str) ->CommandResult:
+        """Update the endDate in a given game to current date/time
+            If source is not "mongo" there is nothing to update:
+            the StoriesGame end() function logs the end date/time.
+        """
+        result = CommandResult()
+        if self._source == "mongo":
+            collection = self._stories_db["games"]
+            query = {"game_id" : game_id}
+            theGame = collection.find_one(query)
+            if theGame is not None:
+                theGame["endDate"] = datetime.now()
+                del theGame["_id"]    # _id is an immutable field
+                replaced = collection.replace_one(query, theGame)     # filter, replacement
+                result.message = f"{game_id} matched {replaced.matched_count}, replaced {replaced.modified_count}"
+            else:
+                result.return_code = CommandResult.WARNING
+                result.message = f"Unable to load game {game_id}"
+        else:
+            pass    # nothing to update
         
         return result
 

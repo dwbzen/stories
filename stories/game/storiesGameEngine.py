@@ -58,7 +58,7 @@ class StoriesGameEngine(object):
 
     _lock = Lock()
 
-    def __init__(self, stories_game:StoriesGame=None, game_id:str=None, loglevel='warning', installationId=""):
+    def __init__(self, stories_game:StoriesGame=None, game_id:str=None, loglevel='debug', installationId=""):
         """
         """
         self._stories_game:StoriesGame = stories_game    # create a new StoriesGame with create()
@@ -232,10 +232,10 @@ class StoriesGameEngine(object):
             Initialize GameEngineCommands
         """
         self._installationId = installationId
-        self._stories_game = StoriesGame(installationId, genre, total_points, self._game_id, game_parameters_type, play_mode, source)
+        self._play_mode = PlayMode[play_mode.upper()] if isinstance(play_mode, str) else play_mode
+        self._stories_game = StoriesGame(installationId, genre, total_points, self._game_id, game_parameters_type, self._play_mode, source)
         self._game_state = self._stories_game.game_state
         self._game_state.game_id = self._game_id
-        self._play_mode = PlayMode[play_mode.upper()] if isinstance(play_mode, str) else play_mode
         self._source = source
         self._game_parameters = self._stories_game.game_parameters
         
@@ -488,15 +488,16 @@ class StoriesGameEngine(object):
         """
         pass
     
-    def help(self, command_name:str=None) ->CommandResult:
+    def help(self, command_name:str=None, action_type:str=None) ->CommandResult:
         """Display valid commands or details on a specific command
         TODO add help for individual card_types (Title, Story etc.) and action_types (meanwhile, draw_new, etc.)
         """
+        result = CommandResult()
+        commands = self.stories_game.story_card_deck.commands
         if command_name is None:
-            cmds = self.stories_game.story_card_deck.commands
-            message = f"Valid commands: {cmds}"
-            result = CommandResult(CommandResult.SUCCESS, message)
-        else:    # help for a specific command
+            result.message = f"Valid commands: {commands}"
+            
+        elif command_name in commands:    # help for a specific command
             message = None
             for detail in self.stories_game.story_card_deck.command_details:
                 if detail["name"] == command_name:
@@ -505,8 +506,40 @@ class StoriesGameEngine(object):
                         description = f"{description}\n{line}"
                     message = f"{command_name}: {detail['arguments']}\n{description}"
                     break
-            message = f"Help not available for {command_name}" if message is None else message
-            result = CommandResult(CommandResult.SUCCESS, message)
+            result.message = f"Help not available for {command_name}" if message is None else message
+            
+        else:    # help for a specific story card type or action card type
+            card_types = self.stories_game.story_card_deck.card_types
+            card_types_list = self.stories_game.story_card_deck.card_types_list    # these use Title case
+            action_types_list = self.stories_game.story_card_deck.action_types_list
+            cardtype = command_name.title()
+            if cardtype not in card_types_list:
+                result.message = f"I don't recognize the card type {cardtype}"
+                result.return_code = CommandResult.ERROR
+                return result
+            if cardtype == "Action" and action_type is not None:
+                #
+                # get help and example for a specific Action type
+                #
+                if action_type not in action_types_list:
+                    result.message = f"I don't recognize the action type {action_type}"
+                    result.return_code = CommandResult.ERROR
+                else:
+                    action_types = self.stories_game.story_card_deck.action_types
+                    for at in action_types:    # List[dict]
+                        if at["action_type"] == action_type:
+                            example = at["example"] if len(at["example"])>0 else "Not available"
+                            result.message = at["Help"] + f"\n example: {example}"
+                            break
+            else:
+                #
+                # help for the specific card type
+                #
+                for ct in card_types:
+                    if ct["card_type"] == cardtype:
+                        count = ct["maximum_count"]
+                        result.message = f'{ct["Help"]}. There are {count} {cardtype} cards in the game deck'
+                        break
         return result
     
     def info(self, initials:str=None)->CommandResult:

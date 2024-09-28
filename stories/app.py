@@ -41,7 +41,7 @@ def add_player(playerInfo:PlayerInfo)->PlayerInfo:
     """
     return gameManager.add_player_to_game(playerInfo)
 
-@app.post('/game/', status_code=201)
+@app.post('/create/', status_code=201)
 def createGame(gameInfo:GameInfo, response: Response)->Game:
     """Create a new StoriesGame and returns the server Game instance
     """
@@ -50,6 +50,13 @@ def createGame(gameInfo:GameInfo, response: Response)->Game:
         response.status_code = status.HTTP_404_NOT_FOUND
         response.body = theGame.errorText
     return theGame
+
+@app.get("/game/{gameId}", status_code=200)
+def getGame(gameId:str, response:Response):
+    game = gameManager.get_game(gameId)
+    if game is None:
+        response.status_code = status.HTTP_404_NOT_FOUND
+    return game
 
 @app.get("/status/{gameId}", status_code=200)
 def getGameStatus(gameId:str, response:Response):
@@ -89,7 +96,12 @@ def nextPlayer(gameID:GameID):
 def endGame(gameID:GameID):
     return gameManager.end_game(gameID)
 
-@app.get("/game/{gameId}", status_code=200)
-def get(gameId:str):
-    return "{TODO}"
+@app.get("/help/{game_id}/{card_or_command}/{action_type}")
+def get_action_help(game_id, card_or_command:str, action_type:str):
+    return gameManager.get_help(game_id, card_or_command, action_type)
+
+@app.get("/help/{game_id}/{card_or_command}")
+def get_help(game_id, card_or_command:str):
+    return gameManager.get_help(game_id, card_or_command)
+
 

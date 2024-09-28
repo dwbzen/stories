@@ -27,7 +27,7 @@
 				" draw discard - draw the top card from the discard deck",
 				" draw <card_type> - for test purposes only, draw a specific card_type: title, opening, story, closing",
 				" draw action <action_type>  - for test purposes only, draw an ActionCard of a specific type:",
-				"   meanwhile, draw_new, trade_lines, steal_lines, stir_pot, change_name, reorder_lines, compose "
+				"   meanwhile, draw_new, trade_lines, steal_lines, stir_pot, change_name, reorder_lines, compose, call_in_favors "
 			]
 		}
 	],
@@ -60,7 +60,7 @@
 		{
 			"card_type" : "Action",
 			"maximum_count" : 25,
-			"Help" : "Player actions."
+			"Help" : "Player actions: meanwhile, draw_new, trade_lines, steal_lines, stir_pot, change_name, reorder_lines, compose, call_in_favors."
 		}
 	],
 	"action_types" : [
@@ -77,7 +77,7 @@
 		{
 			"action_type" : "draw_new",
 			"Help" : "Discard up to 4 cards and draw replacements.",
-			"example" : "N/A",
+			"example" : "play 100 77 87 94   # Play action card 100, discarding cards 77, 87, and 94 and replacing with new story cards. ",
 			"text" : "Draw New",
 			"min_arguments" : 1,
 			"max_arguments" : 4,
@@ -87,7 +87,7 @@
 		{
 			"action_type" : "trade_lines",
 			"Help" : "Trade any story element that has been played with that from another player's story.",
-			"example" : "N/A",
+			"example" : "",
 			"text" : "Trade Line",
 			"min_arguments" : 2,
 			"max_arguments" : 2,
@@ -97,7 +97,7 @@
 		{
 			"action_type" : "steal_lines",
 			"Help" : "A player steals a story card from a story played by another player.",
-			"example" : "N/A",
+			"example" : "",
 			"text" : "Steal Line",
 			"min_arguments" : 2,
 			"max_arguments" : 2,
@@ -107,7 +107,7 @@
 		{
 			"action_type" : "stir_pot",
 			"Help" : "Each player selects a card from their hand and passes it to the person to their left.",
-			"example" : "N/A",
+			"example" : "",
 			"text" : "Stir the Pot",
 			"min_arguments" : 0,
 			"max_arguments" : 0,
@@ -147,7 +147,7 @@
 		{
 			"action_type" : "call_in_favors",
 			"Help" : "Select one card at random from all other players. In team play, select a random card from each player in other teams. Not valid in a collaborative game.",
-			"example" : "N/A",
+			"example" : "",
 			"text" : "Select one card at random from all other players.",
 			"min_arguments" : 0,
 			"max_arguments" : 0,

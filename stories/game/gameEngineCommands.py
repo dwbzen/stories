@@ -16,6 +16,7 @@ from game.storyCardList import StoryCardList
 from typing import List
 import logging, json
 from game.gameParameters import GameParameters
+from game.gameUtils import GameUtils
 
 class GameEngineCommands(object):
     """Implementation of StoriesGame player commands.
@@ -356,9 +357,13 @@ class GameEngineCommands(object):
             if self.play_mode is not PlayMode.COLLABORATIVE:
                 message = f"{message} and the winner with {winner.points} points is {winner.player_initials}"
             if what == "game":
+                self.stories_game.end(what=what)
+                enddate = GameUtils.get_datetime()
+                message = f"{message} {enddate}"
                 return_code = CommandResult.TERMINATE
 
         result = CommandResult(return_code, message, True)
+        self.log(message)
         return result
 
     def find(self, card_type:str, action_type:str=None)->CommandResult:
@@ -502,7 +507,8 @@ class GameEngineCommands(object):
                     
             Examples: play 110        ; play a single story card
                       play 200 110    ; play a MEANWHILE ActionCard (#200), adding "Meanwhile" to story card 110
-            Use the command "help action <action card type>" for more information
+                      
+            Use the command "help action <action card type>" for more information  (TODO)
             about a specific action card. For example, "help action change_name"
             The story card text is added to the end of the story for card types of "Opening/Story" and "Story"
             For "Title", "Opening" and "Closing" if there is an existing story card of that type
@@ -521,6 +527,7 @@ class GameEngineCommands(object):
             
         """
         player = self.game_state.current_player
+        self.log(f"play: player initials: {player.player_initials}, play_mode: {self.play_mode.value} ")
         if isinstance(card_id, str):
             if card_id == "last" and player.story_card_hand.last_card_drawn_number >= 0:
                 card_number = player.story_card_hand.last_card_drawn_number
@@ -555,7 +562,7 @@ class GameEngineCommands(object):
                     director:Player = result.properties["director"]
                     player.remove_card(card_number)
                     director.add_card(story_card)
-                    self.log(f"director: {director.player_initials} player: {player.player_initials}")
+                    self.log(f"play. director: {director.player_initials} player: {player.player_initials}")
                     result = self._play_card(director, story_card, as_player=player)
                 else:
                     result.message = f"{result.message}\nA Director is required for collaborative games. Please add one."
@@ -974,11 +981,13 @@ class GameEngineCommands(object):
             In TEAM Play, the player's team lead maintains the story for the team.
         """
         player = self.game_state.current_player if initials is None else self.get_player(initials)
+        self.log(f"read: player initials: {player.player_initials}, play_mode: {self._play_mode.value} ")
         return_code = CommandResult.SUCCESS
         if self._play_mode is PlayMode.COLLABORATIVE:
             result = self._get_director()
             if result.is_successful():
                 player = result.properties["director"]
+                self.log(f"director: {player.player_initials}")
                 message = player.story_card_hand.my_story_cards.to_string(numbered)
             else:
                 message = result.message

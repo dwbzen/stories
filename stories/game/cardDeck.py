@@ -103,8 +103,12 @@ class CardDeck(StoriesObject):
         return self._card_types_list
     
     @property
-    def action_types(self)->List[str]:
+    def action_types_list(self)->List[str]:
         return self.deck["action_types_list"]
+    
+    @property
+    def action_types(self)->List[dict]:
+        return self.deck["action_types"]
     
     @property
     def deck_cards(self)->List[StoryCard]:

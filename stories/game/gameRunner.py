@@ -321,6 +321,7 @@ def main():
         else:
             # continue on in command mode
             game_runner.run_game()
+            sys.exit()
     
     #
     # create players

@@ -5,7 +5,7 @@ Created on Dec 8, 2023
 '''
 
 from game.storiesObject import StoriesObject
-from game.gameConstants import CardType, PlayerRole, PlayMode, PlayerLevel
+from game.gameConstants import CardType, PlayerRole, PlayMode, PlayerLevel, PlayerPermission
 from game.storyCardHand import StoryCardHand
 from game.storyCard import StoryCard
 from game.commandResult import CommandResult
@@ -40,6 +40,7 @@ class Player(StoriesObject):
         self._card_drawn = False        # set to True when the player draws a card from one of the game decks
         self._story_elements_played = {CardType.TITLE : 0, CardType.OPENING : 0, CardType.STORY : 0, CardType.CLOSING : 0, CardType.ACTION : 0}
         self._player_level:PlayerLevel = PlayerLevel.UNREGISTERED
+        self._permission_level:PlayerPermission = PlayerPermission.USER
     
     @property
     def login_id(self):
@@ -103,12 +104,26 @@ class Player(StoriesObject):
         return self._player_role
     
     @player_role.setter
-    def player_role(self, role:PlayerRole):
-        self._player_role = role
+    def player_role(self, role:PlayerRole|str):
+        if isinstance(role, str):
+            self._player_role = PlayerRole[role.upper()]
+        else:
+            self._player_role = role
         
     @property
     def player_level(self)->PlayerLevel:
         return self._player_level
+    
+    @property
+    def permission_level(self)->PlayerPermission:
+        return self._permission_level
+    
+    @permission_level.setter
+    def permission_level(self, level:PlayerPermission|str):
+        if isinstance(level, str):
+            self._permission_level = PlayerPermission[level.upper()]
+        else:
+            self._permission_level = level
     
     @player_level.setter
     def player_level(self, level:PlayerLevel|str):

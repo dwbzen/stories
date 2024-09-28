@@ -52,10 +52,9 @@ class GameUtils(object):
         return random.choices(population=population,k=number_of_dice)
     
     @staticmethod
-    def get_datetime() -> str:
+    def get_datetime(now=datetime.today()) -> str:
         """Returns - current date/time (now) formatted as a string, for example: 20220911_120545
         """
-        now = datetime.today()
         return '{0:d}{1:02d}{2:02d}_{3:02d}{4:02d}{5:02d}'.format(now.year, now.month, now.day, now.hour, now.minute, now.second)
     
     @staticmethod
@@ -100,8 +99,9 @@ class GameUtils(object):
         today = datetime.now()
         pid = '{0:d}{1:02d}{2:02d}_{3:02d}{4:02d}{5:02d}'.format(today.year, today.month, today.day, today.hour, today.minute, today.second)
         return f"{initials}_{pid}"
-    
-    
+
+        
+        
     
     
     

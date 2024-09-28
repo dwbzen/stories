@@ -93,6 +93,11 @@ class PlayerRole(Enum):
     DIRECTOR = "director"           # COLLABORATIVE PlayMode
     UNASSIGNED = "unassigned"       # Role not yet assigned to this player
 
+class PlayerPermission(Enum):
+    USER = "user"                   # default permission level
+    ADMIN = "admin"                 # game administrator
+    SUPER_USER = "super_user"       # super user has access to certain commands like draw_type
+
 class GameConstants(object):
     '''
     Define global constants

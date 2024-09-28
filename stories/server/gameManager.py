@@ -6,6 +6,7 @@ Created on Aug 12, 2024
 
 from fastapi.encoders import jsonable_encoder
 import pymongo
+from bson.objectid import ObjectId
 from typing import Dict, List
 import json, copy
 import dotenv
@@ -22,6 +23,8 @@ from game.storiesGame import StoriesGame
 from game.player import Player
 from game.commandResult import CommandResult
 from game.gameConstants import PlayerRole
+from game.dataManager import DataManager
+from game import commandResult
 
 class Game(BaseModel):
     """Persisted stories Games
@@ -70,6 +73,7 @@ class PlayerInfo(BaseModel):
     playerId:str = Field(default=None)
     # the role to assign a player added to a game: "player", "team_lead", "director", "team_member", "unassigned"
     playerRole:str = Field(default="unassigned")
+    permission_level:str = Field(default="user")    # "user", "admin", "super_user"
     status:str = Field(default=None)
     return_code:int = Field(default=0)
 
@@ -80,6 +84,17 @@ class CardInfo(BaseModel):
     initials: str = Field(...)
     card_number:str = Field(...)
     action_args:str = Field(default=None)
+
+class DrawInfo(BaseModel):
+    """
+        This model is used to draw a specific card type: "title", "opening", "opening/story", "story", "closing", "action"
+        For Action cards, also need to specify the action_type: "meanwhile", "trade_lines", "steal_lines", "stir_pot", "draw_new", "change_name"
+        Drawing a specific type is useful for debugging. The user (player) must be a super-user.
+    """
+    game_id:str = Field(default="None")    # assigned when the StoriesGame is created
+    initials: str = Field(...)
+    card_type:str = Field(...)
+    action_type:str = Field(default=None)
 
 class Card(BaseModel):
     """StoryCard number, type and text
@@ -94,7 +109,7 @@ class StoriesGameManager(object):
         """
             Constructor
         """
-        self.games:Dict[str,StoriesGameEngine] = {}    # StoriesGameEngine has a StoriesGame reference
+        self.games:Dict[str,StoriesGameEngine] = {}    # StoriesGameEngine has a StoriesGame reference, dict key is game_id
         self.config = dotenv.dotenv_values(".env")
         self.db_url = self.config["DB_URL"]
         self.db_name = self.config["DB_NAME"]    # stories DB
@@ -106,7 +121,6 @@ class StoriesGameManager(object):
             print(message)
         
         self.stories_game = None
-        #self.playerManager = StoriesPlayerManager()
 
     def db_init(self)->(bool,str):
         message = None
@@ -149,7 +163,8 @@ class StoriesGameManager(object):
             theGame.game_id = game_id
             
             #
-            # add the initiating player to the game and assign the role, and start the game
+            # add the initiating player to the game and assign the role, 
+            # add the Game instance to the stories game collection, and start the game
             #
             self.games[game_id] = game_engine
             self._add_player(player_info, game_id, player_role=PlayerRole[gameInfo.playerRole.upper()])
@@ -234,6 +249,16 @@ class StoriesGameManager(object):
                 card = result.message
         return card
     
+    def draw_card_type(self, drawInfo:DrawInfo):
+        card = None
+        playerId = drawInfo.initials
+        # player must be a super user
+        game_id = drawInfo.game_id
+        if game_id in self.games:
+            game_engine:StoriesGameEngine = self.games[game_id]
+            
+        return card
+    
     def read_story(self, game_id:str, initials:str)->dict:
         """Reads the current story for this game_id and player (initials)
         """
@@ -262,27 +287,54 @@ class StoriesGameManager(object):
         return np
     
     def end_game(self, gameID:GameID):
-        result = {"game_id" : gameID.game_id}
-        if gameID.game_id in self.games:
-            game_engine:StoriesGameEngine = self.games[gameID.game_id]
+        game_id = gameID.game_id
+        result = CommandResult()
+        if game_id in self.games:
+            game_engine:StoriesGameEngine = self.games[game_id]
+            theGame = self.get_game(game_id)
+            theGame["endDate"] = datetime.now()
+            del theGame["_id"]    # _id is an immutable field
             eng_result = game_engine.end(what="game")
+            query = {"game_id" : game_id}
+            replaced = self.games_collection.replace_one(query, theGame)     # filter, replacement
+            result.message = f"{eng_result.message}: {game_id}  matched {replaced.matched_count}, replaced {replaced.modified_count}"
         else:
-            eng_result = CommandResult(CommandResult.ERROR, f"invalid GameId: {gameID.game_id}")
-        result["message"] = eng_result.message
-        result["return_code"] = eng_result.return_code
+            result.message = f"invalid GameId: {gameID.game_id}"
+            result.return_code = CommandResult.ERROR
 
         return result
     
-    def get_game(self, id:str)->GameInfo:
-        """TODO
+    def get_game(self, game_id:str)->Game:
+        """Gets the Game object corresponding the given game_id
+            TODO - if the game is not active, restore the serialized StoriesGame
         """
-        return None
+        game:Game = None
+        if game_id in self.games:
+            game = self.games_collection.find_one({"game_id" : game_id})
+            game["_id"] = game["id"]    # "_id" is an ObjectId and not iterable
+        if game is None:
+            print( f"GameId: {game_id} not found or is inactive")
+            
+        return game
+    
+    def get_help(self, game_id, card_or_command:str, action_type:str=None) ->dict:
+        help = {"game_id" : game_id}
+        if game_id in self.games:
+            game_engine:StoriesGameEngine = self.games[game_id]
+            result = game_engine.help(card_or_command, action_type)
+            help["message"] = result.message
+            help["error_code"] = result.return_code
+        else:
+            help["message"] = f"GameId: {game_id} not found or is inactive"
+            help["error_code"] = 2
+            
+        return help
         
 def main():
     # quick test
     gameManager = StoriesGameManager()
     initials="DWB"
-    gameInfo = GameInfo(installation_id="DWBZen999", genre="horror", gameParametersType="test", playMode="collaborative", playerId=initials)
+    gameInfo = GameInfo(installation_id="DWBZen999", genre="horror", gameParametersType="test", playMode="collaborative", playerId=initials, playerRole="director")
     game:Game = gameManager.create_game(gameInfo)
     game_id = game.game_id
     print(f"created game {game_id}")
@@ -290,7 +342,13 @@ def main():
     print(cards)
     game_state = gameManager.get_game_status(game_id)
     print(game_state)
-    
+    result = gameManager.play_card(game_id, "#9", action_args=None)
+    print(result)
+    game = gameManager.get_game(game_id)
+    print(game)
+    gameId = GameID(game_id=game_id)
+    result = gameManager.end_game(gameId)
+    print(result.message)
 
 if __name__ == '__main__':
     main()
