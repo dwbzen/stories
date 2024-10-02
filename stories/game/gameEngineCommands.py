@@ -17,6 +17,7 @@ from typing import List
 import logging, json
 from game.gameParameters import GameParameters
 from game.gameUtils import GameUtils
+from game import storyCardList
 
 class GameEngineCommands(object):
     """Implementation of StoriesGame player commands.
@@ -151,6 +152,53 @@ class GameEngineCommands(object):
                 
         return result
  
+    def _get_card_in_story(self, player:Player, card_id:str|int)->dict:
+        """Gets the designated card number from a player's current story (StoryCardHand.my_story_cards)
+            Arguments:
+                player - the current player.
+                card_id - a card number or ordinal in the form #n where n is a valid line in the player's story.
+            Returns: a dict with the keys "storyCard" (the StoryCard instance) and "index" (the index of that card in my_story_cards)
+            
+            In a collaborative game, the game's Director holds the story.
+            In a team game, the player's team lead holds the story.
+        """
+        storyCard = None
+        story_cards = self._get_story_cards(player)    # returns the appropriate StoryCardList, depending on the game mode & player
+        if isinstance(card_id, int):
+            storyCard = story_cards.find_card(card_id)    # will be None if card number not in the list
+            index = story_cards.index_of(card_id)
+        else:    # card_id is the ordinal from the listing, 1 through #cards
+            index = int(card_id[1:])
+            storyCard = story_cards.get(index)   # will be None if index is not valid
+
+        return {"storyCard" : storyCard, "index" : index}
+    
+    def _get_card(self, player:Player, card_id:str|int) ->StoryCard:
+        """Get a specific StoryCard from a player's hand.
+            Arguments:
+                player - the current Player 
+                card_id - one of: a card number, 
+                          a card number or ordinal in the form #n where n is a valid line in the player's hand,
+                          or the word "last" to get the last card drawn.
+        """
+        if isinstance(card_id, str):
+            if card_id == "last" and player.story_card_hand.last_card_drawn_number >= 0:
+                card_number = player.story_card_hand.last_card_drawn_number
+            elif card_id.startswith("#"):    # card_id is the ordinal from the listing, 1 through #cards
+                ordinal = int(card_id[1:])
+                card_number = self._get_card_number_from_list(player, ordinal)
+                if card_number < 0:
+                    message = f"Invalid line number: {ordinal}"
+                    result = CommandResult(CommandResult.ERROR, message, False)
+                    return result
+            else:
+                card_number = int(card_id)
+                
+        else:    # card_id is an int
+            card_number = card_id
+            
+        story_card = player.story_card_hand.get_card(card_number)
+        return story_card
     
     def check_errors(self)->bool:
         """Return True if checking for player errors.
@@ -550,6 +598,7 @@ class GameEngineCommands(object):
                 result = CommandResult(CommandResult.ERROR, message, False)
         
         elif story_card.card_type is CardType.ACTION:
+            # this could result in playing 2 StoryCards depending in the ActionType
             result = self.execute_action_card(player, story_card, args)
             
         else:
@@ -582,9 +631,12 @@ class GameEngineCommands(object):
                 
         if result.is_successful():
             result.properties = {"story_card_played":story_card}
-            if self.stories_game.game_parameters.automatic_draw and self.play_mode is PlayMode.COLLABORATIVE:
-                draw_result = self.draw(what="new", action_type=None)
-                result.message = f"{result.message} {draw_result.message}"
+            if self.stories_game.game_parameters.automatic_draw:    # and self.play_mode is PlayMode.COLLABORATIVE:
+                num_cards = self.stories_game.game_parameters.max_cards_in_hand - player.story_card_hand.hand_size()
+                if num_cards > 0:
+                    for i in range(num_cards):
+                        draw_result = self.draw(what="new", action_type=None)
+                        result.message = f"{result.message} {draw_result.message}"
             
         return result
     
@@ -630,6 +682,7 @@ class GameEngineCommands(object):
             else:
                 message = f"{player.player_initials} played card# {card_played.number}. {card_played.text}"
             result = CommandResult(CommandResult.SUCCESS, message, True)
+            result.properties = {"story_card_played" : card_played}
         return result
     
     def _get_director(self)->CommandResult:
@@ -1072,9 +1125,12 @@ class GameEngineCommands(object):
                 player - a Player instance
                 action_card - a StoryCard with card_type CardType.ACTION
                 args - a single card number OR a space-separated list of additional card numbers or strings
+                      of #n where n is the line number of a story, for example when using "meanwhile".
+                      This can be used in place of the card number.
                 
             Examples of Action cards:
                 meanwhile: play 249 110           ; card #249 is the meanwhile ActionCard, 110 is a story card
+                           play 249 #3            ; card #249 is the meanwhile ActionCard. Place the "meanwhile" before line #3 of the story.
                 
                 draw_new:  play 250 100 119 143   ; card #250 is the draw_new ActionCard, the cards to replace with new ones are 110,119,143
                 
@@ -1120,13 +1176,16 @@ class GameEngineCommands(object):
 
         return_code = CommandResult.SUCCESS
         done_flag = True
-        
+        #
+        #if card_id.startswith("#"):    # card_id is the ordinal from the listing, 1 through #cards
+        #        ordinal = int(card_id[1:])
+        #        card_number = self._get_card_number_from_list(player, ordinal)
         match(action_type):
             case ActionType.DRAW_NEW:
                 # Discard up to 4 cards and draw replacements
                 message = ""
                 for arg in args:
-                    num = int(arg)
+                    num = int(arg)   # self._get_card(player, arg)
                     story_card = player.story_card_hand.get_card(num)
                     if story_card is None:
                         message = f"You are not holding a card with number {num}"
@@ -1139,30 +1198,42 @@ class GameEngineCommands(object):
                     if return_code != CommandResult.SUCCESS:
                         break
             
-            case ActionType.MEANWHILE:    # requires an additional card to come after the "Meanwhile, "
-                card_number = int(args[0])
-                story_card = player.story_card_hand.get_card(card_number)
-                if story_card is None:
-                    message = f"You are not holding a card with number {card_number}"
-                    return self._log_error(message)
+            case ActionType.MEANWHILE:    
+                # requires an additional card to come after the "Meanwhile," or a line number in the current story
+                # In the following examples, card #187 is the Action card MEANWHILE,
+                #  #3 is the line number in the current story maintained by the player, team lead, or director depending on the play mode
+                #  92 is a StoryCard
+                # play 187  #3  - Insert a "Meanwhile" before line 3
+                # play 187  92  - Add a "Meanwhile" to the end of the story, the play card #92
+                # NOTE that both cards, 187 and 92, must be in the player's hand (the player executing the play)
+                #
+                card_id = args[0]
+                insert_mode = isinstance(card_id, str) and card_id.startswith("#")      # insert the "Meanwhile..." before a given line
                 
-                result = self._get_player_for_play_mode(player)    # the Player maintaining the story
+                result = self._get_player_for_play_mode(player)    # the Player maintaining the story (current player, Director or Team Lead)
                 target_player = result.properties["target_player"]
                 if not target_player._story_card_hand.cards.card_exists(action_card.number):
                     #
-                    # add the Meanwhile to the target_player's hand
+                    # add the Meanwhile StoryCard to the target_player's hand
                     #
                     player.remove_card(action_card.number)
                     target_player.add_card(action_card)
                 
-                action_card_played = target_player.play_card(action_card)
-                play_result:CommandResult = self.play(card_number)
-                if play_result.is_successful():
-                    story_card_played = play_result.properties["story_card_played"]
-                    message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
+                if insert_mode:
+                    index = int(card_id[1:])
+                    action_card_played = target_player.play_card(action_card, insert_after_line=index-1)
+                    message = f"You played {action_card_played.number}. {action_card_played.text}" if action_card_played is not None \
+                              else f"Line number {index} is invalid"
                 else:
-                    message = play_result.message
-                    return_code = play_result.return_code
+                    story_card = self._get_card(player, card_id)
+                    action_card_played = target_player.play_card(action_card)
+                    play_result:CommandResult = self._play_card(target_player, story_card, as_player=player)
+                    if play_result.is_successful():
+                        story_card_played = play_result.properties["story_card_played"]
+                        message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
+                    else:
+                        message = play_result.message
+                        return_code = play_result.return_code
             
             case ActionType.COMPOSE:
                 text = " ".join(args) + "\n"
@@ -1292,7 +1363,7 @@ class GameEngineCommands(object):
                     action_card_played = player.play_card(action_card)
                     message = f"You played {action_card_played.number}. {action_card_played.text} on {story_card.number}. {story_card.text}"
             
-        result = CommandResult(return_code, message, done_flag)
+        result = CommandResult(return_code, message)
         return result
     
     def _log_error(self, message)->CommandResult:

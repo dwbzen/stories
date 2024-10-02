@@ -317,7 +317,7 @@ class StoriesGameManager(object):
             
         return game
     
-    def get_help(self, game_id, card_or_command:str, action_type:str=None) ->dict:
+    def get_help(self, game_id, card_or_command:str=None, action_type:str=None) ->dict:
         help = {"game_id" : game_id}
         if game_id in self.games:
             game_engine:StoriesGameEngine = self.games[game_id]

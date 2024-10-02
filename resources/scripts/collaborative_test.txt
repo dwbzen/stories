@@ -1,0 +1,30 @@
+# creates a collaborative Stories game with one player who is the director
+# --loglevel debug --genre horror --params test --delay 0 --playmode collaborative   
+# --script  /Users/dwbze/OneDrive/Documents/Compile/stories/resources/scripts/collaborative_setup.txt
+#
+add player Don DWB dwbzen dwbzen@gmail.com
+add director Don DWB
+start game
+
+add player Scott SFP Scott scotty121382@yahoo.com
+# DWB
+# director can add more players
+draw title
+play last
+next
+# sfp
+draw opening
+play last
+next
+# dwb
+draw story
+play last
+next
+# sfp
+draw story
+play last
+next
+# dwb
+draw action meanwhile
+ln
+rn

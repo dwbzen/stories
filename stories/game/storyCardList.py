@@ -197,7 +197,7 @@ class StoryCardList(StoriesObject):
             n = 0
             for card in self._cards:
                 if numbered:
-                    txt = f"{n}. ({card.card_type.value}) {card.text}" 
+                    txt = f"{n}. ({card.card_type.value}) {card.number}. {card.text}" 
                 else:
                     txt = card.text
                     

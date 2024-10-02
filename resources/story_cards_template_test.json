@@ -67,7 +67,7 @@
 		{
 			"action_type" : "meanwhile",
 			"Help" : "Play a 'meanwhile' in front of a story element that just doesn't make sense in the place or time of the narrative.",
-			"example" : "play 100 234   # Play action card 100 adding 'Meanwhile' in front of story card# 234, adding both to your story.",
+			"example" : "play 100 234   # Play action card 100 adding 'Meanwhile' in front of story card# 234, adding both to your story. play 100 #2   add 'meanwhile' to the story before line 2.",
 			"text" : "Meanwhile",
 			"min_arguments" : 1,
 			"max_arguments" : 1,

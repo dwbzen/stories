@@ -96,12 +96,17 @@ def nextPlayer(gameID:GameID):
 def endGame(gameID:GameID):
     return gameManager.end_game(gameID)
 
-@app.get("/help/{game_id}/{card_or_command}/{action_type}")
-def get_action_help(game_id, card_or_command:str, action_type:str):
-    return gameManager.get_help(game_id, card_or_command, action_type)
+@app.get("/help/{game_id}")
+def get_general_help(game_id):
+    return gameManager.get_help(game_id)
 
 @app.get("/help/{game_id}/{card_or_command}")
 def get_help(game_id, card_or_command:str):
     return gameManager.get_help(game_id, card_or_command)
+
+@app.get("/help/{game_id}/{card_or_command}/{action_type}")
+def get_action_help(game_id, card_or_command:str, action_type:str):
+    return gameManager.get_help(game_id, card_or_command, action_type)
+
 
 

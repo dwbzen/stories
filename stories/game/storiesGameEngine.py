@@ -335,7 +335,7 @@ class StoriesGameEngine(object):
         action_type = None
         if action_type_value is not None:
             
-            if action_type_value in self.stories_game.story_card_deck.action_types:
+            if action_type_value in self.stories_game.story_card_deck.action_types_list:
                 action_type:ActionType = ActionType[action_type_value.upper()]
                 result = self._gameEngineCommands.draw(what, action_type, initials=initials)
             else:
@@ -494,8 +494,10 @@ class StoriesGameEngine(object):
         """
         result = CommandResult()
         commands = self.stories_game.story_card_deck.commands
+        card_types_list = self.stories_game.story_card_deck.card_types_list
+        action_types_list = self.stories_game.story_card_deck.action_types_list
         if command_name is None:
-            result.message = f"Valid commands: {commands}"
+            result.message = f"Valid commands: {commands}\nStory element types: {card_types_list}\nAction card types: {action_types_list}"
             
         elif command_name in commands:    # help for a specific command
             message = None
@@ -510,8 +512,6 @@ class StoriesGameEngine(object):
             
         else:    # help for a specific story card type or action card type
             card_types = self.stories_game.story_card_deck.card_types
-            card_types_list = self.stories_game.story_card_deck.card_types_list    # these use Title case
-            action_types_list = self.stories_game.story_card_deck.action_types_list
             cardtype = command_name.title()
             if cardtype not in card_types_list:
                 result.message = f"I don't recognize the card type {cardtype}"
