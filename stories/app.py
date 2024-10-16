@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse, Response
 from game.storiesGameEngine import StoriesGameEngine
 from game.storiesGame import StoriesGame
 
-from server.gameManager import StoriesGameManager, Game, GameInfo, CardInfo, PlayerInfo, GameID
+from server.gameManager import StoriesGameManager, Game, GameInfo, CardInfo, PlayerInfo, GameID, DrawInfo
 from server.playerManager import StoriesPlayer, StoriesPlayerManager
 
 gameManager = StoriesGameManager()
@@ -21,7 +21,7 @@ app = FastAPI()
 
 @app.get("/")
 def hello_world():
-    return "Hello, World!"
+    return "Welcome to Stories!"
 
 @app.get("/info/{initials}", status_code=200)
 def info(initials:str, response: Response)->StoriesPlayer:
@@ -82,6 +82,18 @@ def play_card(card_info:CardInfo):
 def draw_card(gameId, initials:str,  response:Response):
     card = gameManager.draw_card(gameId, initials)
     return card
+
+@app.post("/draw/", status_code=201)
+def draw_type(drawInfo:DrawInfo):
+    card = gameManager.draw_card_type(drawInfo)
+    return card
+
+@app.get('/discard/{gameId}/{initials}/{card_number}', status_code=200)
+def discard(gameId, initials:str, card_number:int, response:Response):
+    result_code,message = gameManager.discard_card(gameId, initials, card_number)
+    if result_code > 0:
+        response.status_code = status.HTTP_404_NOT_FOUND
+    return message
 
 @app.get("/read/{gameId}/{initials}", status_code=200)
 def read_story(gameId, initials:str,  response:Response):

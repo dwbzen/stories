@@ -98,6 +98,11 @@ class PlayerPermission(Enum):
     ADMIN = "admin"                 # game administrator
     SUPER_USER = "super_user"       # super user has access to certain commands like draw_type
 
+class Direction(Enum):
+    RIGHT = "right"
+    LEFT  = "left"
+    ANY   = "any"    # random direction
+
 class GameConstants(object):
     '''
     Define global constants
@@ -106,7 +111,7 @@ class GameConstants(object):
             'add', 'add_team', 'deal', 'discard', 'done', 'draw', 'end', 
             'find', 'game_status', 'help', 'info', 'insert', 
             'list', 'list_numbered', 'ln', 'lnj', 'log_message', 'ls', 
-            'next', 'play', 'play_type', 'rank', 'read', 'rn', 'replace',
+            'next', 'pass_card', 'play', 'play_type', 'rank', 'read', 'rn', 'replace',
             'save', 'set', 'show', 'start', 'status', 'team_info', 'update' ]
     
     CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files

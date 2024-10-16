@@ -4,7 +4,7 @@ Created on Dec 22, 2023
 @author: don_bacon
 '''
 
-from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder, PlayMode, PlayerRole, ParameterType
+from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder, PlayMode, PlayerRole, ParameterType, Direction
 from game.storiesGame import StoriesGame
 from game.commandResult import CommandResult
 from game.gameState import GameState
@@ -525,11 +525,11 @@ class GameEngineCommands(object):
             
         return result
 
-    def discard(self, card_number:int)->CommandResult:
+    def discard(self, card_number:int, initials:str|None)->CommandResult:
         """Discard card as indicated by card_number from a player's hand
             and adds to the game discard deck.
         """
-        player = self.game_state.current_player
+        player = self.game_state.current_player if initials is None else self.get_player(initials)
         card_discarded = player.discard(card_number)
         if card_discarded is None:
             message = f"You are not holding a card with number {card_number}"
@@ -540,7 +540,6 @@ class GameEngineCommands(object):
             self.stories_game.add_to_discard(card_discarded)
             result = CommandResult(CommandResult.SUCCESS, message, True)
         return result
-        
     
     def play(self, card_id:int|str, *args) ->CommandResult:
         """Play a story/action card from a player's hand OR the discard deck
@@ -818,15 +817,23 @@ class GameEngineCommands(object):
         
         return result
     
-    def pass_card(self, card_number:int,  initials:str="me")->CommandResult:
-        """Pass a card in the designated player's hand to (the hand of) the next player (to the left).
+    def pass_card(self, card_number:int, direction:Direction,  initials:str="me")->CommandResult:
+        """Pass a card in the designated player's hand to (the hand of) another player as indicated by direction.
             Arguments:
                 card_number - the number of the card to pass. It must exist in the current player's hand
+                direction - "right", "left" or "any" to pick a random direction
                 initials - the initials of the player doing the passing. Defaults to 'me' indicating the current player.
             This command does nothing in a solo game.
         """
         player = self.game_state.current_player if initials=="me" else self.get_player(initials)
-        npn = self._game_state.get_next_player_number(player)
+        if direction is Direction.LEFT:
+            npn = self._game_state.get_next_player_number(player)
+        elif direction is Direction.RIGHT:
+            npn = self._game_state.get_previous_player_number(player)
+        else:    # random direction
+            roll = GameUtils.roll(1)   # returns 1-element List[int] random 1 though 6
+            npn = self._game_state.get_next_player_number(player) if roll[0] <=3 else self._game_state.get_previous_player_number(player)
+        
         if player.number == npn:    # nothing to do
             return CommandResult(CommandResult.SUCCESS, "No other players to pass to!", True)
             

@@ -239,7 +239,7 @@ class StoriesGame(StoriesObject):
             # draw the next occurrence of this CardType
             #
             card_type:CardType = CardType[what.upper()]
-            card = self.story_card_deck.draw_type(card_type, action_type)
+            card = self.story_card_deck.draw_type(card_type, action_type) 
         else:
             message = f"{what} is an invalid draw option"
         

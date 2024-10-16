@@ -230,7 +230,7 @@ class GameState(StoriesObject):
         self.turns += 1
         self.turn_number += 1
         
-    def get_next_player_number(self, aplayer:Player=None):
+    def get_next_player_number(self, aplayer:Player=None)->int:
         """Gets the next player's number relative to the current player, or a designated player.
             Arguments:
                 aplayer - the Player instance to use, defaults to the current player if not specified.
@@ -240,6 +240,13 @@ class GameState(StoriesObject):
         else:
             npn = aplayer.number + 1
         return 0 if npn >= self.number_of_players() else npn
+    
+    def get_previous_player_number(self, aplayer:Player=None)->int:
+        if aplayer is None:
+            ppn = 0 if self.current_player is None else (self.current_player.number - 1)
+        else:
+            ppn = aplayer.number - 1
+        return self.number_of_players() - 1 if ppn < 0 else ppn   
     
     def add_player(self, aplayer:Player)->int:
         """Add a Player to the game

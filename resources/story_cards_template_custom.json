@@ -9,7 +9,7 @@
 		"meanwhile", "draw_new", "trade_lines", "steal_lines", "stir_pot", "change_name", "reorder_lines", "compose", "call_in_favors"
 	],
 	"characters" : [ "Michael", "Nick", "Samantha", "Vivian" ],
-	"commands" : [ "add", "discard", "draw", "done", "end", "help", "info", "insert", "list", "ln", "ls", "next", "pass", "play", "rank", "read", "replace", "rn", "show", "status", "swap" ],
+	"commands" : [ "add", "discard", "draw", "done", "end", "help", "info", "insert", "list", "ln", "ls", "next", "pass_card", "play", "rank", "read", "replace", "rn", "show", "status", "swap" ],
 	"command_details" : [
 		{
 			"name" : "discard",

@@ -8,7 +8,7 @@ from fastapi.encoders import jsonable_encoder
 import pymongo
 from bson.objectid import ObjectId
 from typing import Dict, List
-import json, copy
+import json
 import dotenv
 import string
 from uuid import uuid4
@@ -22,9 +22,8 @@ from game.storiesGameEngine import StoriesGameEngine
 from game.storiesGame import StoriesGame
 from game.player import Player
 from game.commandResult import CommandResult
-from game.gameConstants import PlayerRole
+from game.gameConstants import PlayerRole, ActionType
 from game.dataManager import DataManager
-from game import commandResult
 
 class Game(BaseModel):
     """Persisted stories Games
@@ -88,7 +87,8 @@ class CardInfo(BaseModel):
 class DrawInfo(BaseModel):
     """
         This model is used to draw a specific card type: "title", "opening", "opening/story", "story", "closing", "action"
-        For Action cards, also need to specify the action_type: "meanwhile", "trade_lines", "steal_lines", "stir_pot", "draw_new", "change_name"
+        For Action cards, also need to specify the action_type: 
+        "meanwhile", "trade_lines", "steal_lines", "stir_pot", "draw_new", "change_name"
         Drawing a specific type is useful for debugging. The user (player) must be a super-user.
     """
     game_id:str = Field(default="None")    # assigned when the StoriesGame is created
@@ -255,9 +255,21 @@ class StoriesGameManager(object):
         # player must be a super user
         game_id = drawInfo.game_id
         if game_id in self.games:
+            if drawInfo.action_type is None or len(drawInfo.action_type) ==0:
+                action_type = None
+            else:
+                action_type = drawInfo.action_type
             game_engine:StoriesGameEngine = self.games[game_id]
-            
+            card = game_engine.draw(drawInfo.card_type, action_type, playerId)
         return card
+    
+    def discard_card(self, game_id:str, initials:str, card_number:int)->(int,str):
+        if game_id in self.games:
+            game_engine:StoriesGameEngine = self.games[game_id]
+            result = game_engine.discard(card_number, initials)
+            return result.return_code, result.message
+        else:
+            return CommandResult.ERROR, f"No such game: {game_id}"
     
     def read_story(self, game_id:str, initials:str)->dict:
         """Reads the current story for this game_id and player (initials)
@@ -347,6 +359,11 @@ def main():
     game = gameManager.get_game(game_id)
     print(game)
     gameId = GameID(game_id=game_id)
+    
+    drawInfo = DrawInfo(game_id=game_id, initials=initials, card_type="action", action_type="meanwhile")
+    result = gameManager.draw_card_type(drawInfo)
+    print(result)
+    
     result = gameManager.end_game(gameId)
     print(result.message)
 

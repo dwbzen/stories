@@ -12,7 +12,7 @@ from game.environment import Environment
 from game.gameState import GameState
 from game.logger import Logger
 from game.gameUtils import GameUtils
-from game.gameConstants import GenreType, GameConstants, CardType, ActionType, PlayMode, PlayerRole, ParameterType
+from game.gameConstants import GenreType, GameConstants, CardType, ActionType, PlayMode, PlayerRole, ParameterType, Direction
 from game.gameEngineCommands import GameEngineCommands
 from game.gameParameters import GameParameters
 
@@ -346,10 +346,21 @@ class StoriesGameEngine(object):
             
         return result
     
-    def discard(self, card_number:int):
+    def discard(self, card_number:int, initials=None):
         """Discard cards as indicated by their card_number from a player's hand.
         """
-        return self._gameEngineCommands.discard(card_number)
+        return self._gameEngineCommands.discard(card_number, initials)
+    
+    def pass_card(self, card_number:int, direct:str, initials=None):
+        """Pass a card in the current player's hand to the hand of the next player (to the left).
+            Arguments:
+                card_number - the number of the card to pass. It must exist in the current player's hand
+                direct - "right", "left" or "any" to pick a random direction. Passed as Direction to GameEngineCommands.
+                initials - optional player initials. Defaults to the current player if not specified
+            This command does nothing in a solo game.
+        """
+        direction = Direction[direct.upper()]
+        return self._gameEngineCommands.pass_card(card_number, direction, initials)
     
     def play(self, card_number:int, *args) ->CommandResult:
         """Play 1 or 2 cards: 1 story card, or 1 multi-card action card and a story card
@@ -371,14 +382,6 @@ class StoriesGameEngine(object):
         """Replace a card in your current story with one in your hand.
         """
         return self._gameEngineCommands.replace(line_number, card_number)
-    
-    def pass_card(self, card_number:int)->CommandResult:
-        """Pass a card in the current player's hand to the hand of the next player (to the left).
-            Arguments:
-                card_number - the number of the card to pass. It must exist in the current player's hand
-            This command does nothing in a solo game.
-        """
-        return self._gameEngineCommands.pass_card(card_number)
 
     def list(self, what='hand', initials:str='me', how='numbered', display_format='text') ->CommandResult:
         """List the Experience or Gateway cards held by the current player
