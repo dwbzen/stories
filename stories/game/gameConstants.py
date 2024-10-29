@@ -111,7 +111,8 @@ class GameConstants(object):
             'add', 'add_team', 'deal', 'discard', 'done', 'draw', 'end', 
             'find', 'game_status', 'help', 'info', 'insert', 
             'list', 'list_numbered', 'ln', 'lnj', 'log_message', 'ls', 
-            'next', 'pass_card', 'play', 'play_type', 'rank', 'read', 'rn', 'replace',
+            'next', 'pass_card', 'play', 'play_type', 'publish', 
+            'rank', 'read', 're_read', 'rn', 'replace',
             'save', 'set', 'show', 'start', 'status', 'team_info', 'update' ]
     
     CHARACTERS = ['Michael', 'Nick', 'Samantha', 'Vivian']      # character names as they appear in the story files

@@ -114,9 +114,12 @@ class StoryCardHand(StoriesObject):
             and appended to their story (self.my_story_cards)
             If this leaves a deficit in the player's hand a new card must be
             drawn from the game card deck OR selected from the common discard pile.
+            
             If the card's CardType is a TITLE, OPENING, or CLOSING, this will replace
             an existing story card if one exists.
             If it's also the most recent card draw, last_card_drawn_number is set to -1
+            
+            If the story already has a Closing, playing a "Story" will insert that story element before the Closing.
         """
         ind = self._cards.index_of(card_number)
         card:StoryCard = None
@@ -147,7 +150,19 @@ class StoryCardHand(StoriesObject):
                 # STORY or OPENING_STORY card types
                 #
                 elif card.story_element:
-                    self._my_story_cards.add_card(card)
+                    #
+                    # if the last line in the current story is a CLOSING
+                    # then insert this card just before that
+                    nlines = self._my_story_cards.size()
+                    if nlines > 0:
+                        last_card = self._my_story_cards.get(nlines-1)
+                        if last_card.card_type is CardType.CLOSING:
+                            self._my_story_cards.insert_card(nlines-1, card)   # insert after the line before the CLOSING
+                        else:
+                            self._my_story_cards.add_card(card)
+                    else:
+                        self._my_story_cards.add_card(card)
+                    #self._my_story_cards.add_card(card)
                     
             self._cards.remove(ind)
         return card

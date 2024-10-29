@@ -26,7 +26,10 @@ pip install "fastapi[standard]
 ```
 Run the server as follows:
 ```
+
 cd <project root folder>/stories
+
 fastapi dev app.py
 ```
+
 The .env file in this folder has database names and connection URL.

@@ -8,7 +8,7 @@ from game.storyCard import StoryCard
 from game.storiesObject import StoriesObject
 from game.gameConstants import CardType, ActionType
 from typing import List, Dict
-import json
+import json, random
 from collections.abc import Iterator
 
 class StoryCardList(StoriesObject):
@@ -153,6 +153,16 @@ class StoryCardList(StoriesObject):
         """
         ncards = len(self._cards)
         return self._cards[index] if (ncards > 0 and index >= 0 and index < ncards) else None
+    
+    def pick_any(self)->StoryCard:
+        """
+            Select a card at random from this StoryCardList
+        """
+        card = None
+        if self.size() > 0:
+            index = random.randint(0, self.size()-1)
+            card = self.get(index)
+        return card
 
     def remove(self, index):
         """Removes the card at the given index.

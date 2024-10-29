@@ -351,11 +351,12 @@ class StoriesGameEngine(object):
         """
         return self._gameEngineCommands.discard(card_number, initials)
     
-    def pass_card(self, card_number:int, direct:str, initials=None):
+    def pass_card(self, card_number:int, direct:str="left", initials=None):
         """Pass a card in the current player's hand to the hand of the next player (to the left).
             Arguments:
                 card_number - the number of the card to pass. It must exist in the current player's hand
                 direct - "right", "left" or "any" to pick a random direction. Passed as Direction to GameEngineCommands.
+                         Default value is "left" (Direction.LEFT)
                 initials - optional player initials. Defaults to the current player if not specified
             This command does nothing in a solo game.
         """
@@ -461,6 +462,12 @@ class StoriesGameEngine(object):
     
     def rn(self, initials:str=None, display_format='text')->CommandResult:
         return self.read(True, initials, display_format)
+    
+    def publish(self, numbered:bool=True, initials:str=None, display_format='json')->CommandResult:
+        return self._gameEngineCommands.publish(numbered, initials, display_format)
+    
+    def re_read(self, game_id, initials:str=None)->CommandResult:
+        return self._gameEngineCommands.re_read(game_id, initials)
     
     def save(self, how="json") -> CommandResult:
         """Save the current game state.

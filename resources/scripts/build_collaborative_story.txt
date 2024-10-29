@@ -1,4 +1,5 @@
 # creates a collaborative Stories game with one player who is the director
+# and 3 additional players
 add player Don DWB Don dwbzen@gmail.com
 add director Don DWB
 start game
@@ -25,7 +26,7 @@ draw story
 play last
 next
 #
-limit = 20;
+limit = 6;
 counter = 0;
 while counter < limit {
 	draw story
@@ -33,8 +34,10 @@ while counter < limit {
 	next
 	counter += 1;
 }
-#dwb
+# ejb
 draw closing
 play last
 read
-end game
+next
+next
+# dwb

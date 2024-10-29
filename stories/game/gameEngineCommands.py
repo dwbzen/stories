@@ -4,7 +4,8 @@ Created on Dec 22, 2023
 @author: don_bacon
 '''
 
-from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder, PlayMode, PlayerRole, ParameterType, Direction
+from game.gameConstants import GameConstants, ActionType, CardType, CardTypeEncoder
+from game.gameConstants import PlayMode, PlayerRole, ParameterType, Direction
 from game.storiesGame import StoriesGame
 from game.commandResult import CommandResult
 from game.gameState import GameState
@@ -14,10 +15,9 @@ from game.storyCard import StoryCard
 from game.storyCardList import StoryCardList
 
 from typing import List
-import logging, json
+import logging, json, re
 from game.gameParameters import GameParameters
 from game.gameUtils import GameUtils
-from game import storyCardList
 
 class GameEngineCommands(object):
     """Implementation of StoriesGame player commands.
@@ -557,9 +557,13 @@ class GameEngineCommands(object):
                       
             Use the command "help action <action card type>" for more information  (TODO)
             about a specific action card. For example, "help action change_name"
+            
             The story card text is added to the end of the story for card types of "Opening/Story" and "Story"
             For "Title", "Opening" and "Closing" if there is an existing story card of that type
             in the player's story, it is replaced with the new one, otherwise it's added to the end.
+            
+            TODO: If the story already has a Closing, playing a "Story" or "Opening/Story" will
+            insert that story element before the Closing.
             
             In a collaborative game all the players maintain their own hand,
             but the player with the DIRECTOR PlayerRole maintains the common story.
@@ -599,6 +603,8 @@ class GameEngineCommands(object):
         elif story_card.card_type is CardType.ACTION:
             # this could result in playing 2 StoryCards depending in the ActionType
             result = self.execute_action_card(player, story_card, args)
+            # remove the card just played from the player's hand
+            player.story_card_hand.remove_card(story_card.number)
             
         else:
             if self._play_mode is PlayMode.COLLABORATIVE:
@@ -731,7 +737,8 @@ class GameEngineCommands(object):
             result = CommandResult(CommandResult.ERROR, "No team leads in a non-Team game", False)
         
         return result
-    3
+    
+
     def _get_story_cards(self, player:Player)->StoryCardList:
         target_player = player
         story_cards = []
@@ -817,15 +824,15 @@ class GameEngineCommands(object):
         
         return result
     
-    def pass_card(self, card_number:int, direction:Direction,  initials:str="me")->CommandResult:
+    def pass_card(self, card_number:int, direction:Direction,  initials:str|None=None)->CommandResult:
         """Pass a card in the designated player's hand to (the hand of) another player as indicated by direction.
             Arguments:
                 card_number - the number of the card to pass. It must exist in the current player's hand
-                direction - "right", "left" or "any" to pick a random direction
-                initials - the initials of the player doing the passing. Defaults to 'me' indicating the current player.
+                direction - Direction.RIGHT, LEFT or ANY  to pick a random direction.
+                initials - the initials of the player doing the passing. Defaults to None indicating the current player.
             This command does nothing in a solo game.
         """
-        player = self.game_state.current_player if initials=="me" else self.get_player(initials)
+        player = self.game_state.current_player if initials is None else self.get_player(initials)
         if direction is Direction.LEFT:
             npn = self._game_state.get_next_player_number(player)
         elif direction is Direction.RIGHT:
@@ -982,9 +989,11 @@ class GameEngineCommands(object):
         return CommandResult(CommandResult.SUCCESS, "TODO")
     
     def show(self, what)->CommandResult:
-        """Displays the top card of the discard pile
+        """Displays 
             Arguments:
-                what - what to display: discard (top card of the discard pile) 
+                what - what to display: 
+                       discard - top card of the discard pile) 
+                       all 
                 or a story element class: "Title", "Opening", "Opening/Story", "Story", "Closing", "Action"
             Returns: CommandResult.message is the str(card) for discard, a numbered list of str for story element classes.
         """
@@ -1029,7 +1038,7 @@ class GameEngineCommands(object):
         
         return result
         
-    def read(self, numbered:bool, initials:str=None, display_format='text')->CommandResult:
+    def read(self, numbered:bool, initials:str=None, display_format='text', indent=0)->CommandResult:
         """Display a player's story in a readable format.
             Arguments:
                 numbered - if True number the lines starting at 1 with the first story card.
@@ -1063,13 +1072,58 @@ class GameEngineCommands(object):
                 message = f"{result.message}\nA team lead is required for team games. Please add one to team '{team_name}'"   
                 return_code = CommandResult.WARNING
         
-        props = player.story_card_hand.my_story_cards.to_dict(how="condensed")    # key is "cards" 
+        props = player.story_card_hand.my_story_cards.to_dict(how="full")    # key is "cards" 
         if display_format == "text":
             message = player.story_card_hand.my_story_cards.to_string(numbered)
         elif display_format == "json" or display_format == "dict":
-            message = player.story_card_hand.my_story_cards.to_JSON(indent=0)
+            message = player.story_card_hand.my_story_cards.to_JSON(indent=indent)
 
         return CommandResult(return_code, message, properties=props)
+    
+    def publish(self, numbered:bool=True, initials:str=None, display_format='dict')->CommandResult:
+        """Publish a story to MongoDB, associated with this gameID and player_initials.
+            The story does not need to be completed in order to be published.
+            Only one story for this game/player can be published.
+            Any subsequent publish commands overwrites the existing one.
+            Arguments:
+                numbered - if True number the lines starting at 1 with the first story card.
+                           The Title and Closing line(s) are not numbered.
+                           Default is True
+                initials - the player's initials if other than the current player
+                display_format - "text", "json" or "dict"  Default value is "dict"
+            Note that the default output format is a dictionary as the story is persisted to MongoDB.
+            The "re_read" command converts and displays in "read" format.
+        """
+        result = self._get_director()
+        if result.is_successful():    # in a COLABORATIVE game, publish as the game's Director
+            player = result.properties["director"]
+        else:
+            player = self.game_state.current_player if initials is None else self.get_player(initials)
+        player_id = player.player_initials
+        game_id = self.stories_game.game_id
+        result =  self.read(numbered, initials=player_id, display_format=display_format, indent=2)
+        if result.return_code == CommandResult.SUCCESS:
+            story = result.properties
+            story["game_id"] = game_id
+            story["initials"] = player_id
+            self.stories_game.data_manager.add_game_story(game_id, player_id, story)
+            
+        return result
+
+    def re_read(self, game_id, initials:str=None)->CommandResult:        
+        player = self.game_state.current_player if initials is None else self.get_player(initials)
+        player_id = player.player_initials
+        result = self.stories_game.data_manager.get_game_story(game_id, player_id)
+        if result.is_successful():
+            gs = result.properties["game_story"]    # Dict
+            # need to reformat the json to a readable story
+            # and return that in result.message
+            cards = gs["cards"]
+            message = ""
+            for card in cards:
+                message = f'{message}{card["text"]}'    # assume each line terminated with a newline
+            result.message = message
+        return result
 
     def save_game(self, gamefile_base_name:str, game_id:str, how='json', source='mongo') -> CommandResult:
         """Save the complete serialized game state so it can be restarted at a later time.
@@ -1147,15 +1201,21 @@ class GameEngineCommands(object):
 
                 steal_lines:  play 252 Brian 4    ; card #252 is a steal_lines ActionCard. Steal line#4 from Brian's  story and place it in my hand
                 
-                stir_pot: play 266  151     ; card #266 is a stir_pot ActionCard. Each player selects a card from their hand 
-                                              and passes it to the person to their left. Card #151 is the current player's card to pass.
-                                              Remaining players use the 'pass <card_number>' command.
+                stir_pot: play 266          ; card #266 is a stir_pot ActionCard. 
+                                              Each player selects a card from their hand and passes it to the person to their left, 
+                                              OR selection and direction (left/right) is done automatically.
+                                              Players use the 'pass <card_number>' command if not automatic.
                                               
-                change_name: play 272 3 Brian/He        ; card #272 is a change_name ActionCard, 3 is line 3 in my current story.
+                change_name: play 272 3 He/Brian        ; card #272 is a change_name ActionCard, 3 is line 3 in my current story.
                                                           change instances of "Brian" in that card to "He"
+                                                          The change is case-sensitive and changes whole words only.
                                                         
                 compose: play 273  She knew it was a mistake!    ; card #273 is a COMPOSE ActionCard. 
                                                                    The StoryCard text is "She knew it was a mistake!"
+                
+                call_in_favors:  play 274   ; card #274 is a CALL_IN_FAVORS ActionCard.
+                                              Every player must then pass a Gateway card (randomly selected)
+                                              to the player who played the action card.
                                                                    
                 NOTES: story line numbering starts at 0, which will be a Title story card.
                 Change_name supported only in the online version of the game.
@@ -1163,7 +1223,7 @@ class GameEngineCommands(object):
                 In COLLABORATIVE and TEAM play mode, relevant actions are 
                 played against the director's and team lead's story respectively.
                 
-                TODO - implement REORDER_LINES, CALL_IN_FAVORS, STIR_POT
+                TODO - implement REORDER_LINES, CALL_IN_FAVORS
                 TODO - test STEAL_LINES, TRADE_LINES  for individual, team and collaborative play
         """
         action_type = action_card.action_type        # ActionType
@@ -1274,6 +1334,7 @@ class GameEngineCommands(object):
                 
             case ActionType.STEAL_LINES:
                 # Steal a story card played by another player
+                # Note that this action card doesn't make sense in a collaborative game
                 target_player_name = args[0]    # name or initials work
                 line_number = int(args[1])    # a line# in an opponents story
                 target_player:Player = self.get_player(target_player_name)
@@ -1332,7 +1393,19 @@ class GameEngineCommands(object):
                 # if the randomize_picks game parameter is set to True, the selection is done at random automatically
                 # otherwise each player must run a pass_card <card_number> command.
                 #
-                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented but soon."
+                # NOTE that enforcement of this interactive mode is not currently enforced.
+                if self.game_parameters.automatic_draw:
+                    message = ""
+                    for player in self.game_state.players:
+                        card = player.story_card_hand.cards.pick_any()
+                        result:CommandResult = self.pass_card(card.number, Direction.LEFT, initials=player.player_initials)
+                        if not result.is_successful():
+                            return result
+                        else:
+                            message = f"{message}\n{result.message}"
+                else:
+                    message = f"{action_card.action_type.value} interactive mode not enforced. Each player must pass_card <card_number> left."
+                    return_code = CommandResult.WARNING
                     
             case ActionType.CHANGE_NAME:
                 # Change up to 2 character names on a selected story card (that has been played) to a different alias or pronoun
@@ -1342,7 +1415,7 @@ class GameEngineCommands(object):
                 # 3. Alice woke up in a cold sweat. She had been dreaming of her life with Travis, but in each dream, she was watching her own funeral.
                 # requires 2 or 3 arguments: the story line number to change
                 # up to 2 changes, each formatted as <before>/<after>
-                #
+                # Note that this is case-sensitive and affects whole words only
                 
                 story_cards = self._get_story_cards(player)
                 nlines = story_cards.size()
@@ -1360,11 +1433,16 @@ class GameEngineCommands(object):
                     else:
                         names = args[i].split("/")
                         if len(names) != 2:
-                            message = "Change name must have a before and after separated by a /"
+                            message = "Change name must have a before and after separated by a '/'"
                             return_code = CommandResult.ERROR
                             break
+                        
                         story_card = story_cards.get(story_line_number)
-                        story_card.text = story_card.text.replace(names[0], names[1])
+                        regstr = f"\\b{names[0]}\\b|^{names[0]}"
+                        regx = re.compile(regstr, re.IGNORECASE)
+                        m = regx.subn(names[1], story_card.text)
+                        
+                        story_card.text = m[0]
                         
                 if return_code == CommandResult.SUCCESS:
                     action_card_played = player.play_card(action_card)

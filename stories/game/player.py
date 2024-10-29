@@ -232,6 +232,9 @@ class Player(StoriesObject):
             For TITLE, OPENING and CLOSING if there is an existing story card of that type
             in the player's story, it is replaced with the new one, otherwise it's added to the end.
             
+            If the story already has a Closing, playing a "Story" or "Opening/Story" will
+            insert that story element before the Closing.
+            
             In a collaborative game all the players maintain their own hand, 
             but the player with the DIRECTOR PlayerRole maintains the common story.
             
@@ -240,6 +243,9 @@ class Player(StoriesObject):
         """
         assert(card is not None)
         card_number = card.number if isinstance(card, StoryCard) else card
+        open_count = self.story_elements_played[CardType.OPENING]
+        story_count = self.story_elements_played[CardType.STORY]
+        
         card_played = self.story_card_hand.play_card(card_number, insert_after_line)
         
         if card_played is None:
@@ -251,8 +257,6 @@ class Player(StoriesObject):
                 # card played as Opening or Story
                 # Treat as an OPENING if this player has not yet played an opening card
                 # otherwise play as a STORY card.
-                open_count = self.story_elements_played[CardType.OPENING]
-                story_count = self.story_elements_played[CardType.STORY]
                 if open_count == 0:     # treat as OPENING
                     self.story_elements_played[CardType.OPENING] = 1
                 else:                   # treat as story body

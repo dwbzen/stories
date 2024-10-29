@@ -195,6 +195,40 @@ class DataManager(object):
             pass    # nothing to update
         
         return result
+    
+    def add_game_story(self, game_id:str, player_id:str, story:dict) -> CommandResult:
+        result = CommandResult()
+        if self._source == "mongo":
+            collection = self._stories_db["game_stories"]
+            query = {"game_id" : game_id, "initials" : player_id}
+            gs = collection.find_one(query)
+            if gs is None:
+                rec_id = f"{game_id}_{player_id}"
+                story["id"] = rec_id
+                story["game_id"] = game_id
+                story["initials"] = player_id
+                collection.insert_one(story)
+            else:    # replace the existing one
+                replaced = collection.replace_one(query, story)
+                result.message = f"{game_id} matched {replaced.matched_count}, replaced {replaced.modified_count}"
+        else:
+            result.message = "TODO - write to a text file"
+            
+        return result
+    
+    def get_game_story(self, game_id:str, player_id:str) -> CommandResult:
+        result = CommandResult()
+        collection = self._stories_db["game_stories"]
+        query = {"game_id" : game_id, "initials" : player_id}
+        gs = collection.find_one(query)    # returns the MongoDB record as a Dict, or None if not found
+        if gs is None:
+            result.return_code = CommandResult.ERROR
+            result.message = f"Story not found for {game_id} and {player_id}"
+        else:
+            pass
+        
+        result.properties = {"game_story" : gs}
+        return result
 
     @property
     def game_parameters(self)->GameParameters:
