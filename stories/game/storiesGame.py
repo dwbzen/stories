@@ -41,6 +41,7 @@ class StoriesGame(StoriesObject):
         """
         """
         self._installation_id = installationId
+        self._play_mode = play_mode    # INDIVIDUAL, TEAM, or COLLABORATIVE PlayMode
         self._env = Environment.get_environment()
         self._resource_folder = self._env.get_resource_folder()     # base resource folder
         self._game_parameters_type = GameParametersType[game_parameters_type.upper()]      # can be "test", "prod", or "custom"
@@ -52,7 +53,6 @@ class StoriesGame(StoriesObject):
         self._data_manager = DataManager(data_source, game_parameters_type, genre, load_all=True)
         
         self._game_parameters = self._data_manager.game_parameters
-        self._play_mode = play_mode    # INDIVIDUAL, TEAM, or COLLABORATIVE PlayMode
         
         self._genre = GenreType[genre.upper()]
         self._game_id = game_id
@@ -82,9 +82,9 @@ class StoriesGame(StoriesObject):
             Arguments:
                 character_alias - optional 4-element dict of character aliases
                         This overrides settings in the gameParameters files.
+        TODO if game mode is COLLABORATIVE, remove action types from the template: STEAL_LINES, TRADE_LINES, CALL_IN_FAVORS
         """
         alias = self.game_parameters.character_alias if character_alias is None else character_alias
-        # self._story_card_deck = self._data_manager.load_story_cards(self._data_source, self.genre, alias)
         story_card_template = self._data_manager.story_card_template
         self._story_card_deck = CardDeck(self.genre, story_card_template, alias=alias)
         self._story_discard_deck = deque()      # empty deque for discards. Player discards added to the right

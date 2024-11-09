@@ -1242,211 +1242,222 @@ class GameEngineCommands(object):
             return self._log_error(message)
 
         return_code = CommandResult.SUCCESS
-        done_flag = True
-        #
-        #if card_id.startswith("#"):    # card_id is the ordinal from the listing, 1 through #cards
-        #        ordinal = int(card_id[1:])
-        #        card_number = self._get_card_number_from_list(player, ordinal)
-        match(action_type):
-            case ActionType.DRAW_NEW:
-                # Discard up to 4 cards and draw replacements
-                message = ""
-                for arg in args:
-                    num = int(arg)   # self._get_card(player, arg)
-                    story_card = player.story_card_hand.get_card(num)
-                    if story_card is None:
-                        message = f"You are not holding a card with number {num}"
-                        return self._log_error(message)
-                        
-                    player.remove_card(num)
-                    draw_result:CommandResult = self.draw_for(player, "new")
-                    message = f"{message}\n{draw_result.message}"
-                    return_code = draw_result.return_code
-                    if return_code != CommandResult.SUCCESS:
-                        break
+       
+        if action_type is ActionType.DRAW_NEW:
+            # Discard up to 4 cards and draw replacements
+            message = ""
+            for arg in args:
+                num = int(arg)   # self._get_card(player, arg)
+                story_card = player.story_card_hand.get_card(num)
+                if story_card is None:
+                    message = f"You are not holding a card with number {num}"
+                    return self._log_error(message)
+                    
+                player.remove_card(num)
+                draw_result:CommandResult = self.draw_for(player, "new")
+                message = f"{message}\n{draw_result.message}"
+                return_code = draw_result.return_code
+                if return_code != CommandResult.SUCCESS:
+                    break
             
-            case ActionType.MEANWHILE:    
-                # requires an additional card to come after the "Meanwhile," or a line number in the current story
-                # In the following examples, card #187 is the Action card MEANWHILE,
-                #  #3 is the line number in the current story maintained by the player, team lead, or director depending on the play mode
-                #  92 is a StoryCard
-                # play 187  #3  - Insert a "Meanwhile" before line 3
-                # play 187  92  - Add a "Meanwhile" to the end of the story, the play card #92
-                # NOTE that both cards, 187 and 92, must be in the player's hand (the player executing the play)
-                #
-                card_id = args[0]
-                insert_mode = isinstance(card_id, str) and card_id.startswith("#")      # insert the "Meanwhile..." before a given line
-                
-                result = self._get_player_for_play_mode(player)    # the Player maintaining the story (current player, Director or Team Lead)
-                target_player = result.properties["target_player"]
-                if not target_player._story_card_hand.cards.card_exists(action_card.number):
-                    #
-                    # add the Meanwhile StoryCard to the target_player's hand
-                    #
-                    player.remove_card(action_card.number)
-                    target_player.add_card(action_card)
-                
-                if insert_mode:
-                    index = int(card_id[1:])
-                    action_card_played = target_player.play_card(action_card, insert_after_line=index-1)
-                    message = f"You played {action_card_played.number}. {action_card_played.text}" if action_card_played is not None \
-                              else f"Line number {index} is invalid"
-                else:
-                    story_card = self._get_card(player, card_id)
-                    action_card_played = target_player.play_card(action_card)
-                    play_result:CommandResult = self._play_card(target_player, story_card, as_player=player)
-                    if play_result.is_successful():
-                        story_card_played = play_result.properties["story_card_played"]
-                        message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
-                    else:
-                        message = play_result.message
-                        return_code = play_result.return_code
+        elif action_type is ActionType.MEANWHILE:    
+            # requires an additional card to come after the "Meanwhile," or a line number in the current story
+            # In the following examples, card #187 is the Action card MEANWHILE,
+            #  #3 is the line number in the current story maintained by the player, team lead, or director depending on the play mode
+            #  92 is a StoryCard
+            # play 187  #3  - Insert a "Meanwhile" before line 3
+            # play 187  92  - Add a "Meanwhile" to the end of the story, the play card #92
+            # NOTE that both cards, 187 and 92, must be in the player's hand (the player executing the play)
+            #
+            card_id = args[0]
+            insert_mode = isinstance(card_id, str) and card_id.startswith("#")      # insert the "Meanwhile..." before a given line
             
-            case ActionType.COMPOSE:
-                text = " ".join(args) + "\n"
-
+            result = self._get_player_for_play_mode(player)    # the Player maintaining the story (current player, Director or Team Lead)
+            target_player = result.properties["target_player"]
+            if not target_player._story_card_hand.cards.card_exists(action_card.number):
                 #
-                # create a new StoryCard from the text provided, 
-                # add it to the player's hand, then play that card
-                # For teams, the card is added to the player's team lead
-                # In a collaborative game, the card is added to the game Director's hand
+                # add the Meanwhile StoryCard to the target_player's hand
                 #
-                result = self._get_player_for_play_mode(player)    # the Player maintaining the story
-                target_player = result.properties["target_player"]
-                if not target_player._story_card_hand.cards.card_exists(action_card.number):
-                    #
-                    # add the COMPOSE action card to the target_player's hand
-                    #
-                    player.remove_card(action_card.number)
-                    target_player.add_card(action_card)
-                
+                player.remove_card(action_card.number)
+                target_player.add_card(action_card)
+            
+            if insert_mode:
+                index = int(card_id[1:])
+                action_card_played = target_player.play_card(action_card, insert_after_line=index-1)
+                message = f"You played {action_card_played.number}. {action_card_played.text}" if action_card_played is not None \
+                          else f"Line number {index} is invalid"
+            else:
+                story_card = self._get_card(player, card_id)
                 action_card_played = target_player.play_card(action_card)
-                # create a new StoryCard for the bespoke text
-                genre = self.stories_game.genre
-                card_number = self.stories_game.story_card_deck.next_card_number
-                story_card = StoryCard(genre, CardType.STORY, text, card_number)
-                
-                player.add_card(story_card)
-                result = self.play(card_number)
-                if result.return_code is CommandResult.SUCCESS:
-                    self.stories_game.story_card_deck.next_card_number = card_number + 1
-                message = f"You played {action_card.number}. {action_card.text} {result.message}"
-                
-            case ActionType.STEAL_LINES:
-                # Steal a story card played by another player
-                # Note that this action card doesn't make sense in a collaborative game
-                target_player_name = args[0]    # name or initials work
-                line_number = int(args[1])    # a line# in an opponents story
-                target_player:Player = self.get_player(target_player_name)
-                if target_player is None:
-                    message = f"No such player: {target_player_name}"
-                    return self._log_error(message)
-                story_cards = target_player.story_card_hand.my_story_cards
-                if line_number >= story_cards.size():
-                    message = f"Invalid line number: {line_number}"
-                    return self._log_error(message)
-                story_card = story_cards.get(line_number)
-                #
-                # put story_card in my hand and remove from the target_players hand
-                #
-                player.add_card(story_card)
-                target_player.remove_card(story_card.number)
-                
-                message = f"You played {action_card.number}. {action_card.action_type.value}, stealing line {line_number} from {target_player.player_name} "
-            
-            case ActionType.TRADE_LINES:
-                # Trade an Opening or Story element that has been played with that from another player's story
-                target_player_name = args[0]    # name or initials work
-                target_line_number = int(args[1])      # a line# in an opponents story
-                my_line_number = int(args[2])          # a line# in my story
-                target_player:Player = self.get_player(target_player_name)
-                if target_player is None:
-                    message = f"No such player: {target_player_name}"
-                    return self._log_error(message)
-                target_story_cards = target_player.story_card_hand.my_story_cards
-                if target_line_number >= target_story_cards.size():
-                    message = f"Invalid line number: {target_line_number}"
-                    return self._log_error(message)
-                target_story_card = target_story_cards.get(target_line_number)    # my opponent's StoryCard
-                my_story_cards = player.story_card_hand.my_story_cards
-                if my_line_number >= my_story_cards.size():
-                    message = f"Invalid line number: {my_line_number}"
-                    return self._log_error(message)
-                my_story_card = my_story_cards.get(my_line_number)
-                #
-                # swap the lines:
-                # put target_story_card in my story at line my_line_number
-                # an my_story_card in target_story_cards at target_line_number
-                #
-                message = f"{action_card.number}. {action_card.action_type.value} not available."
-            
-            case ActionType.REORDER_LINES:
-                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
-                return_code = CommandResult.WARNING
-            
-            case ActionType.CALL_IN_FAVORS:
-                message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
-                return_code = CommandResult.WARNING
-                    
-            case ActionType.STIR_POT:
-                # Each player selects a story element from their deck and passes it to the person to their left
-                # if the randomize_picks game parameter is set to True, the selection is done at random automatically
-                # otherwise each player must run a pass_card <card_number> command.
-                #
-                # NOTE that enforcement of this interactive mode is not currently enforced.
-                if self.game_parameters.automatic_draw:
-                    message = ""
-                    for player in self.game_state.players:
-                        card = player.story_card_hand.cards.pick_any()
-                        result:CommandResult = self.pass_card(card.number, Direction.LEFT, initials=player.player_initials)
-                        if not result.is_successful():
-                            return result
-                        else:
-                            message = f"{message}\n{result.message}"
+                play_result:CommandResult = self._play_card(target_player, story_card, as_player=player)
+                if play_result.is_successful():
+                    story_card_played = play_result.properties["story_card_played"]
+                    message = f"You played {action_card_played.number}. {action_card_played.text} and {story_card_played.number}. {story_card_played.text}"
                 else:
-                    message = f"{action_card.action_type.value} interactive mode not enforced. Each player must pass_card <card_number> left."
-                    return_code = CommandResult.WARNING
-                    
-            case ActionType.CHANGE_NAME:
-                # Change up to 2 character names on a selected story card (that has been played) to a different alias or pronoun
-                # Example: given the following story line #3:
-                # 3. Cheryl woke up in a cold sweat. She had been dreaming of her life with Don, but in each dream, she was watching her own funeral.
-                # play 222 3 Cheryl/Alice Don/Travis    results in:
-                # 3. Alice woke up in a cold sweat. She had been dreaming of her life with Travis, but in each dream, she was watching her own funeral.
-                # requires 2 or 3 arguments: the story line number to change
-                # up to 2 changes, each formatted as <before>/<after>
-                # Note that this is case-sensitive and affects whole words only
+                    message = play_result.message
+                    return_code = play_result.return_code
+            
+        elif action_type is ActionType.COMPOSE:
+            text = " ".join(args) + "\n"
+
+            #
+            # create a new StoryCard from the text provided, 
+            # add it to the player's hand, then play that card
+            # For teams, the card is added to the player's team lead
+            # In a collaborative game, the card is added to the game Director's hand
+            #
+            result = self._get_player_for_play_mode(player)    # the Player maintaining the story
+            target_player = result.properties["target_player"]
+            if not target_player._story_card_hand.cards.card_exists(action_card.number):
+                #
+                # add the COMPOSE action card to the target_player's hand
+                #
+                player.remove_card(action_card.number)
+                target_player.add_card(action_card)
+            
+            action_card_played = target_player.play_card(action_card)
+            # create a new StoryCard for the bespoke text
+            genre = self.stories_game.genre
+            card_number = self.stories_game.story_card_deck.next_card_number
+            story_card = StoryCard(genre, CardType.STORY, text, card_number)
+            
+            player.add_card(story_card)
+            result = self.play(card_number)
+            if result.return_code is CommandResult.SUCCESS:
+                self.stories_game.story_card_deck.next_card_number = card_number + 1
+            message = f"You played {action_card.number}. {action_card.text} {result.message}"
                 
-                story_cards = self._get_story_cards(player)
-                nlines = story_cards.size()
-                nargs = len(args)
-                story_card = None
-                for i in range(nargs):
-                    if i == 0:
-                        story_line_number = int(args[0])    # starts at 0
-                        if story_line_number > nlines-1:
-                            message = f"Invalid story line number {story_line_number}"
-                            return_code = CommandResult.ERROR
-                            break
-                        else:
-                            continue
+        elif action_type is ActionType.STEAL_LINES:
+            # Steal a story card played by another player
+            # Note that this action card doesn't make sense in a collaborative game
+            # In a team game, you can only steal lines from members of another team
+            if self.play_mode is PlayMode.COLLABORATIVE:
+                message = "Steal lines not available in collaborative play mode."
+                return self._log_error(message)
+            
+            target_player_name = args[0]    # name or initials work
+            line_number = int(args[1])    # a line# in an opponents story
+            target_player:Player = self.get_player(target_player_name)
+            if target_player is None:
+                message = f"No such player: {target_player_name}"
+                return self._log_error(message)
+            
+            if self.play_mode is PlayMode.TEAM:
+                # target player needs to be in a different team than the player executing this command
+                if target_player.my_team_name == player.my_team_name:
+                    message = "target player must be in a different team than you."
+                    return self._log_error(message)
+            
+            story_cards = target_player.story_card_hand.my_story_cards
+            if line_number >= story_cards.size():
+                message = f"Invalid line number: {line_number}"
+                return self._log_error(message)
+            story_card = story_cards.get(line_number)
+            #
+            # put story_card in my hand and remove from the target_players hand
+            #
+            player.add_card(story_card)
+            target_player.remove_card(story_card.number)
+            
+            message = f"You played {action_card.number}. {action_card.action_type.value}, stealing line {line_number} from {target_player.player_name} "
+            
+        elif action_type is ActionType.TRADE_LINES:
+            # Trade an Opening or Story element that has been played with that from another player's story
+            # Note that this action card doesn't make sense in a collaborative game
+            # In a team game, you can only steal lines from members of another team
+            target_player_name = args[0]    # name or initials work
+            target_line_number = int(args[1])      # a line# in an opponents story
+            my_line_number = int(args[2])          # a line# in my story
+            target_player:Player = self.get_player(target_player_name)
+            if target_player is None:
+                message = f"No such player: {target_player_name}"
+                return self._log_error(message)
+            target_story_cards = target_player.story_card_hand.my_story_cards
+            if target_line_number >= target_story_cards.size():
+                message = f"Invalid line number: {target_line_number}"
+                return self._log_error(message)
+            target_story_card = target_story_cards.get(target_line_number)    # my opponent's StoryCard
+            my_story_cards = player.story_card_hand.my_story_cards
+            if my_line_number >= my_story_cards.size():
+                message = f"Invalid line number: {my_line_number}"
+                return self._log_error(message)
+            my_story_card = my_story_cards.get(my_line_number)
+            #
+            # swap the lines:
+            # put target_story_card in my story at line my_line_number
+            # an my_story_card in target_story_cards at target_line_number
+            #
+            message = f"{action_card.number}. {action_card.action_type.value} not available."
+            
+        elif action_type is ActionType.REORDER_LINES:
+            message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
+            return_code = CommandResult.WARNING
+            
+        elif action_type is ActionType.CALL_IN_FAVORS:
+            # Select one card at random from all other players. 
+            # In team play, select a random card from each player in other teams. Not valid in a collaborative game.
+            message = f"{action_card.number}. {action_card.action_type.value} not yet implemented."
+            return_code = CommandResult.WARNING
+                    
+        elif action_type is ActionType.STIR_POT:
+            # Each player selects a story element from their deck and passes it to the person to their left
+            # if the randomize_picks game parameter is set to True, the selection is done at random automatically
+            # otherwise each player must run a pass_card <card_number> command.
+            #
+            # NOTE that enforcement of this interactive mode is not currently enforced.
+            if self.game_parameters.automatic_draw:
+                message = ""
+                for player in self.game_state.players:
+                    card = player.story_card_hand.cards.pick_any()
+                    result:CommandResult = self.pass_card(card.number, Direction.LEFT, initials=player.player_initials)
+                    if not result.is_successful():
+                        return result
                     else:
-                        names = args[i].split("/")
-                        if len(names) != 2:
-                            message = "Change name must have a before and after separated by a '/'"
-                            return_code = CommandResult.ERROR
-                            break
-                        
-                        story_card = story_cards.get(story_line_number)
-                        regstr = f"\\b{names[0]}\\b|^{names[0]}"
-                        regx = re.compile(regstr, re.IGNORECASE)
-                        m = regx.subn(names[1], story_card.text)
-                        
-                        story_card.text = m[0]
-                        
-                if return_code == CommandResult.SUCCESS:
-                    action_card_played = player.play_card(action_card)
-                    message = f"You played {action_card_played.number}. {action_card_played.text} on {story_card.number}. {story_card.text}"
+                        message = f"{message}\n{result.message}"
+            else:
+                message = f"{action_card.action_type.value} interactive mode not enforced. Each player must pass_card <card_number> left."
+                return_code = CommandResult.WARNING
+                    
+        elif action_type is ActionType.CHANGE_NAME:
+            # Change up to 2 character names on a selected story card (that has been played) to a different alias or pronoun
+            # Example: given the following story line #3:
+            # 3. Cheryl woke up in a cold sweat. She had been dreaming of her life with Don, but in each dream, she was watching her own funeral.
+            # play 222 3 Cheryl/Alice Don/Travis    results in:
+            # 3. Alice woke up in a cold sweat. She had been dreaming of her life with Travis, but in each dream, she was watching her own funeral.
+            # requires 2 or 3 arguments: the story line number to change
+            # up to 2 changes, each formatted as <before>/<after>
+            # Note that this is case-sensitive and affects whole words only
+            
+            story_cards = self._get_story_cards(player)
+            nlines = story_cards.size()
+            nargs = len(args)
+            story_card = None
+            for i in range(nargs):
+                if i == 0:
+                    story_line_number = int(args[0])    # starts at 0
+                    if story_line_number > nlines-1:
+                        message = f"Invalid story line number {story_line_number}"
+                        return_code = CommandResult.ERROR
+                        break
+                    else:
+                        continue
+                else:
+                    names = args[i].split("/")
+                    if len(names) != 2:
+                        message = "Change name must have a before and after separated by a '/'"
+                        return_code = CommandResult.ERROR
+                        break
+                    
+                    story_card = story_cards.get(story_line_number)
+                    regstr = f"\\b{names[0]}\\b|^{names[0]}"
+                    regx = re.compile(regstr, re.IGNORECASE)
+                    m = regx.subn(names[1], story_card.text)
+                    
+                    story_card.text = m[0]
+                    
+            if return_code == CommandResult.SUCCESS:
+                action_card_played = player.play_card(action_card)
+                message = f"You played {action_card_played.number}. {action_card_played.text} on {story_card.number}. {story_card.text}"
             
         result = CommandResult(return_code, message)
         return result

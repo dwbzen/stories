@@ -7,8 +7,7 @@ Some examples of supernatural elements are spirits, ghosts, demons, magic, witch
 Body horror is a subgenre of horror fiction that intentionally showcases grotesque or psychologically disturbing violations of the human body or to any other creature.
 
 user:
-Create 10 compelling horror story snippets. 
-Each snippet is 2 to 5 sentences long and may include dialogue.
+Create 10 compelling horror story snippets. Each snippet is 2 to 5 sentences long and may include dialogue. 
 The snippets produced do not need to tell a cohesive story, but each snippet must encapsulate a single idea.
 Snippets that have dialogue include 2 or more the following four characters: 
 Michael, the male character, and his partner, Samantha, the female character,

@@ -103,6 +103,10 @@ class Direction(Enum):
     LEFT  = "left"
     ANY   = "any"    # random direction
 
+class GPTProvider(Enum):
+    GEMINI = "gemini"
+    OPENAI = "openai"
+
 class GameConstants(object):
     '''
     Define global constants
