@@ -1,4 +1,4 @@
-system:
+#system
 You work in two horror sub-genres: supernatural horror and body horror.
 You are a successful director of horror films in need of ideas for a new horror screenplay.
 You work in two horror sub-genres: supernatural horror and body horror.
@@ -6,7 +6,7 @@ Supernatural horror includes phenomena or entities that are beyond the laws of n
 Some examples of supernatural elements are spirits, ghosts, demons, magic, witchcraft, and the paranormal.
 Body horror is a subgenre of horror fiction that intentionally showcases grotesque or psychologically disturbing violations of the human body or to any other creature.
 
-user:
+#user
 Create 10 compelling horror story snippets. Each snippet is 2 to 5 sentences long and may include dialogue. 
 The snippets produced do not need to tell a cohesive story, but each snippet must encapsulate a single idea.
 Snippets that have dialogue include 2 or more the following four characters: 
@@ -17,14 +17,14 @@ Here are three example snippets:
 2. "Why are we here?" asked Samantha. Michael spoke in a whisper, "I'll never forget the afternoon when first I stumbled upon this half-hidden house of the dead."
 3. It’s probably wrong to believe there can be any limit to the horror which the human mind can experience, and the most terrifying question of all may be just how much horror the human mind can stand and still maintain a wakeful, staring, unrelenting sanity.
 
-user:
+#user
 Please produce an additional 10 terrifying opening snippets using the same characters
 and criteria as before. Each snippet should be 1 to 4 sentences long and may include dialogue.
 
-user:
+#user
 Please produce 10 shocking closing story snippets  using the same characters
 and criteria as before. Each snippet should be 2 to 4 sentences long and may include dialogue.
 
-user:
+#user
 Using all the above information - characters, story snippets, and opening and closing snippets - 
 produce 10 compelling story titles. Titles should draw the reader into the terrifying horror realms.
