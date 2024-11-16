@@ -1,7 +1,9 @@
 #
 #  A sample command line to run this script file is:
-#   --loglevel info --genre horror --params test  --script  /Users/dwbze/OneDrive/Documents/Compile/stories/resources/scripts/function_test.txt
-#
+#   --loglevel info --genre horror --params test  --script  <project_root>/resources/scripts/function_test.txt
+#  This tests the ability to call python functions within a script,
+#  in this case drawing random numbers
+
 add player Don DWB Don dwbzen@gmail.com
 add player Brian BDB Brian brian.bacon01@gmail.com
 start game

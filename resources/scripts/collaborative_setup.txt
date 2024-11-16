@@ -5,8 +5,7 @@
 add player Don DWB dwbzen dwbzen@gmail.com
 add director Don DWB
 start game
-
-add player Scott SFP Scott scotty121382@yahoo.com
+#
 add player Brian BDB Brian brian.bacon01@gmail.com
 add player Beth EJB Beth beth@gmail.com
 add player Cheryl CJL Cheryl lister.cheryl@gmail.com

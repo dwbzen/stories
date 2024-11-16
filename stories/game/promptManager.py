@@ -43,6 +43,11 @@ class PromptManager(object):
             But the air in the cabin felt different, heavy and oppressive, like a cold hand was pressing down on their chests.
         The format of the responses  - for example numbering, including a title - can be controlled by the prompt itself,
         or through configuration for JSON output.
+        
+        TODO - refactor to create an abstract base class GPTProvider and 2 derived classes:
+        GeminiGPTProvider and OpenAIGPTProvider
+        The PromptManager then will create an instance of the appropriate GPTProvider based on command arguments.
+        Rename the GPTProvider Enum class to GPTProviders
     """
     
     def __init__(self, genre:str, provider:GPTProvider, model_name:str, \
@@ -93,7 +98,7 @@ class PromptManager(object):
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
             self.configure_model(temperature, output_format)
         else:   # OpenAI
-            # api_key = os.environ["API_KEY"]
+            api_key = os.environ["OPENAPI_API_KEY"]
             print(f"{provider} not implemented, but coming soon!")
             
     def configure_model(self, temp:float, output_format:str):

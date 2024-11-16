@@ -9,6 +9,7 @@ from game.commandResult import CommandResult
 from game.player import Player
 from game.storiesGameEngine import StoriesGameEngine
 from game.gameConstants import GameParametersType, PlayMode
+from game.environment import Environment
 
 from typing import List
 import argparse, time
@@ -46,6 +47,8 @@ class GameRunner(object):
         self._debug = debug_flag           # traces the action by describing each step
         self._game_engine = None           # GameEngine instance
         self._stories_game = stories_game
+        self._env = Environment.get_environment()
+        self._resource_folder = self._env.get_resource_folder()     # base resource folder
         
         if stories_game is None:          # create a new StoriesGame
             self.game_engine = StoriesGameEngine(stories_game=None, game_id=None, loglevel=log_level, installationId=installationId)
@@ -105,6 +108,14 @@ class GameRunner(object):
     @property
     def debug(self)->bool:
         return self._debug
+    
+    @property
+    def resource_folder(self)->str:
+        return self._resource_folder
+    
+    @property
+    def env(self)->Environment:
+        return self._env
 
     def create_game(self, game_id=None, game_mode="test") -> CommandResult:
         result = self.game_engine.create(self.installationId, self.genre, self.total_points, game_id, game_mode)
@@ -302,7 +313,7 @@ def main():
     total_points = args.points
 
     installationId = 'DWBZen2024'  # uniquely identifies 'me' as the game creator
-    script_filePath = args.script         # complete file path
+
     log_comments = args.comments.lower()=='y'
     gameId = args.gameid
     current_player = None
@@ -313,8 +324,12 @@ def main():
     game_mode = "prod" if args.params=="test_prod" else args.params
     play_mode = PlayMode[args.playmode.upper()]
     game_runner = GameRunner(installationId, args.genre, total_points, args.loglevel, game_mode, play_mode, args.source, args.aliases, stories_game=None)
-    
-    if script_filePath is not None:
+
+    # assume the script file is a complete file path if it starts with a "/"
+    # otherwise assume it is relative to project resources: <project_root>/resources
+    #
+    if args.script is not None:
+        script_filePath = args.script if args.script.startswith("/") else f"{game_runner.resource_folder}/scripts/{args.script}"
         result = game_runner.run_script(script_filePath, args.delay, log_comments=log_comments)
         if result.return_code == CommandResult.TERMINATE:
             return
