@@ -18,6 +18,9 @@ __all__ = [
     'gameRunner',
     'gameState',
     'gameUtils',
+    'gptProvider',
+    'geminiGPTProvider',
+    'openAIGPTProvider',
     'logger',
     'player',
     'storiesObject',
@@ -54,4 +57,7 @@ from .storyCardLoader import StoryCardLoader
 
 from .storiesGame import StoriesGame
 from .chatManager import ChatManager
+from .gptProvider import GPTProvider
+from .geminiGPTProvider import GeminiGPTProvider
+from .openAIGPTProvider import OPenAIGPTProvider
 

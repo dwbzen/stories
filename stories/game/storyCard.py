@@ -4,8 +4,8 @@ Created on Dec 9, 2023
 @author: don_bacon
 '''
 
-from game.storiesObject import StoriesObject
 from game.gameConstants import GenreType, CardType, ActionType, GameConstants
+from game.storiesObject import StoriesObject
 import json
 
 class StoryCard(StoriesObject):

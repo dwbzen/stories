@@ -103,9 +103,16 @@ class Direction(Enum):
     LEFT  = "left"
     ANY   = "any"    # random direction
 
-class GPTProvider(Enum):
+class GPTProviders(Enum):
     GEMINI = "gemini"
     OPENAI = "openai"
+
+class GPTProviderKeyName(Enum):
+    """The API key for a provider must exist in the runtime environment
+       and the the name listed below.
+    """
+    GEMINI = "GEMINI_API_KEY"
+    OPENAI = "OPENAI_API_KEY"
 
 class GameConstants(object):
     '''

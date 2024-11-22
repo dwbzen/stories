@@ -7,12 +7,14 @@ Created on Nov 7, 2024
 import google.generativeai as genai
 import argparse
 import os, sys
-from game.gameConstants import GPTProvider
+from game.gameConstants import GPTProviders, CardType
+from game.geminiGPTProvider import GeminiGPTProvider
+from game.openAIGPTProvider import OPenAIGPTProvider
 from game.environment import Environment
 import typing_extensions as typing
 from google.ai.generativelanguage_v1.types.generative_service import GenerateContentResponse
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 class StorySnippet(typing.TypedDict):
     line_number: int
@@ -47,10 +49,9 @@ class PromptManager(object):
         TODO - refactor to create an abstract base class GPTProvider and 2 derived classes:
         GeminiGPTProvider and OpenAIGPTProvider
         The PromptManager then will create an instance of the appropriate GPTProvider based on command arguments.
-        Rename the GPTProvider Enum class to GPTProviders
     """
     
-    def __init__(self, genre:str, provider:GPTProvider, model_name:str, \
+    def __init__(self, genre:str, provider:GPTProviders, model_name:str, card_type:CardType, \
                  prompt_source:str=None, system_instructions_source:str=None,  \
                  temperature=1.0, output_format="text", candidate_count=1):
         """
@@ -76,6 +77,7 @@ class PromptManager(object):
         self._genre_folder = f"{self._resource_folder}/genres/{genre}"
         self._provider = provider
         self._model_name = model_name
+        
         self._model = None
         self._prompt = None
         self._prompt_source = prompt_source    # could be None
@@ -93,7 +95,7 @@ class PromptManager(object):
         if system_instructions_source is not None:
             self._system_instructions_source = system_instructions_source
             
-        if provider is GPTProvider.GEMINI:
+        if provider is GPTProviders.GEMINI:
             self._model = genai.GenerativeModel(model_name) if self._system_instructions is None else genai.GenerativeModel(model_name, system_instructions=self._system_instructions)
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
             self.configure_model(temperature, output_format)
@@ -129,7 +131,7 @@ class PromptManager(object):
         return self._model_name
     
     @property
-    def provider(self)->GPTProvider:
+    def provider(self)->GPTProviders:
         return self._provider
     
     @property
@@ -199,26 +201,34 @@ def main():
     parser.add_argument("--provider", help="The name of the provider for this GPT", type=str, choices=["gemini","openai"], default=None)
     parser.add_argument("--system", help="Name of the file containing system instructions.", type=str, default=None)
     parser.add_argument("--genre", "-g", help="The story genre: horror, noir, or romance.", type=str, choices=["horror", "noir"],  default=None)
-    parser.add_argument("--model", "-m", help="Model name", type=str, choices=['gemini-1.5-flash', 'gpt-4o'],  default=None )
+    parser.add_argument("--model", "-m", help="Model name", type=str, choices=['gemini-1.5-flash', 'gpt-4o', 'o1-preview', 'o1-mini'],  default=None )
     parser.add_argument("--prompt", "-p", help="Provide a text prompt", type=str, default=None)
     parser.add_argument("--source", help="The name of the file or MongoDB collection containing the prompt/training", default=None)
     parser.add_argument("--system_instructions", "-s", help="Name of the file containing system instructions", type=str, default=None)
-    parser.add_argument("--count", "-c", help="Candidate count - #responses", type=int, default=1)
+    parser.add_argument("--count", help="Candidate count - #responses", type=int, default=1)
     parser.add_argument("--temperature", "-t", help="temperature controls the randomness of the output", type=float, default=1.0)
     parser.add_argument("--format", "-f", help="Output format", type=str, choices=["text", "json"], default="text")
+    card_types = [x.value for x in CardType]   # Title, Story, Opening, Opening/Story, Closing, Action
+    parser.add_argument("--card_type", "-c", help="Optional Card type, default is Story", type=str, choices=card_types, default="Story")
     
     args = parser.parse_args()
-    if  not (args.prompt is None and args.file is None):    # need an embedded prompt, or a file containing a prompt
-        provider = GPTProvider[args.provider.upper()]
-        prompt_manager = PromptManager(args.genre, provider, args.model, \
+    if  not (args.prompt is None and args.source is None):    # need an embedded prompt, or a file containing a prompt
+        card_type = CardType[args.card_type.upper()]
+        provider = GPTProviders[args.provider.upper()]
+        if provider is GPTProviders.GEMINI:
+            gptProvider = GeminiGPTProvider(args.genre, provider, args.model, card_type=card_type, \
                                        prompt_source=args.source, system_instructions_source=args.system_instructions, \
                                        temperature=args.temperature, \
-                                       output_format=args.format, candidate_count=args.count)
-        response_text = prompt_manager.generate_content(args.prompt)
-        print(response_text)
-        # configure the responses to be more creative
-        prompt_manager.temperature = 2.0
-        response_text = prompt_manager.generate_content(args.prompt)
+                                       output_format=args.format, candidate_count=args.count  )
+
+        elif provider is GPTProviders.OPENAI:
+            gptProvider = OPenAIGPTProvider(args.genre, provider, args.model, card_type=card_type, \
+                                       prompt_source=args.source, system_instructions_source=args.system_instructions, \
+                                       temperature=args.temperature, \
+                                       output_format=args.format, candidate_count=args.count  )
+        prompt = gptProvider.prompt
+        gptProvider.generate_content(prompt)
+        response_text = gptProvider.content
         print(response_text)
     
     else:
