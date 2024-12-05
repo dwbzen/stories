@@ -6,6 +6,8 @@ You are inspired by the noir films of the 1940's and 1950's but with a modern sp
 Your goal is to create 25 compelling noir story snippets. 
 Each snippet is 2 to 5 sentences long and may optionally include dialogue.
 The snippets produced do not need to tell a cohesive story, but each snippet must encapsulate a single idea or scene.
+Output should be in plain text and not include markdown. Number each snippet starting with 1.
+The output should also include a field named card_type. Set the value of card_type to "Story".
 Snippets may include the following characters: 
 (1) Johnny Archer, a cynical private detective is the male protagonist.
 (2) Samantha Blake is the femme fatale female character.

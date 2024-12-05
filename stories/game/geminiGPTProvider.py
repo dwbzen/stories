@@ -5,7 +5,7 @@ Created on Nov 19, 2024
 '''
 
 from game.gptProvider import GPTProvider
-from game.gameConstants import GPTProviders, GPTProviderKeyName, CardType
+from game.gameConstants import GPTProviders, GPTProviderKeyName, CardType, GenreType
 import google.generativeai as genai
 from google.ai.generativelanguage_v1.types.generative_service import GenerateContentResponse
 from pydantic import BaseModel
@@ -29,7 +29,7 @@ class GeminiGPTProvider(GPTProvider):
     API interface to Google Gemini
     '''
 
-    def __init__(self, genre:str, provider:GPTProviders, model_name:str, card_type:CardType, \
+    def __init__(self, genre:GenreType, provider:GPTProviders, model_name:str, card_type:CardType, \
                  prompt_source:str=None, system_instructions_source:str=None,  \
                  temperature=1.0, output_format="text", candidate_count=1):
         '''
@@ -37,7 +37,11 @@ class GeminiGPTProvider(GPTProvider):
         '''
         super().__init__(genre, provider, model_name, card_type, prompt_source, system_instructions_source, temperature, output_format, candidate_count)
         
-        self._model = genai.GenerativeModel(model_name) if self._system_instructions is None else genai.GenerativeModel(model_name, system_instructions=self._system_instructions)
+        if self._system_instructions is None:
+            self._model = genai.GenerativeModel(model_name) 
+        else:
+            self._model = genai.GenerativeModel(model_name=model_name, system_instruction=self._system_instructions)
+            
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
         #self.configure_model(temperature, output_format)
 

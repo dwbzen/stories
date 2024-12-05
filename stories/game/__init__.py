@@ -21,6 +21,7 @@ __all__ = [
     'gptProvider',
     'geminiGPTProvider',
     'openAIGPTProvider',
+    'promptRunner',
     'logger',
     'player',
     'storiesObject',
@@ -60,4 +61,5 @@ from .chatManager import ChatManager
 from .gptProvider import GPTProvider
 from .geminiGPTProvider import GeminiGPTProvider
 from .openAIGPTProvider import OPenAIGPTProvider
+from .promptRunner import PromptRunner
 

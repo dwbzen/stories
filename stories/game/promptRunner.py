@@ -7,7 +7,8 @@ Created on Nov 7, 2024
 import google.generativeai as genai
 import argparse
 import os, sys
-from game.gameConstants import GPTProviders, CardType
+from game.gameConstants import GPTProviders, CardType, GenreType
+from game.gptProvider import GPTProvider
 from game.geminiGPTProvider import GeminiGPTProvider
 from game.openAIGPTProvider import OPenAIGPTProvider
 from game.environment import Environment
@@ -28,34 +29,16 @@ class Card(BaseModel):
 class Cards(BaseModel):
     cards:list[Card]
 
-class PromptManager(object):
+class PromptRunner(object):
     """
         Create a generative AI model and generate responses from text prompts.
-        
-        Sample text responses may include a title delimited by "**". For example:
-        1. **The Attic:** The floorboards groaned under Don's weight as he crept towards the attic door. A low, guttural growl echoed from within, making his hair stand on end. "Cheryl, you sure you heard that?" he whispered, his voice cracking. "It's just the wind, Don," Cheryl replied, but her voice trembled. "Maybe we should just leave." 
-        2. **The Mirror:** Beth stared into the antique mirror, her reflection warping and twisting as she touched the cold, tarnished surface. A chilling voice rasped from the depths of the mirror, "You're not supposed to be here." Her blood ran cold as the reflection blinked, a crimson eye gleaming in the darkness. 
-        Sample responses that do not include a title:
-        1.  The floorboards groaned under his weight as Don crept closer to the attic door. 
-            "You hear that?" he whispered, his voice trembling. "It's coming from inside." 
-            Cheryl gripped his arm, her face pale in the dim light. "Don't go in there," she pleaded, but the faint scratching sounds from within the attic were too much to ignore.
-        2.  Beth shivered, pulling her thin jacket tighter around herself. 
-            "This place is freezing," she muttered. Brian shrugged, fiddling with his phone. 
-            "Maybe it's just the altitude. You know, high up in the mountains and all." 
-            But the air in the cabin felt different, heavy and oppressive, like a cold hand was pressing down on their chests.
-        The format of the responses  - for example numbering, including a title - can be controlled by the prompt itself,
-        or through configuration for JSON output.
-        
-        TODO - refactor to create an abstract base class GPTProvider and 2 derived classes:
-        GeminiGPTProvider and OpenAIGPTProvider
-        The PromptManager then will create an instance of the appropriate GPTProvider based on command arguments.
     """
     
     def __init__(self, genre:str, provider:GPTProviders, model_name:str, card_type:CardType, \
                  prompt_source:str=None, system_instructions_source:str=None,  \
                  temperature=1.0, output_format="text", candidate_count=1):
         """
-            Create and initialize a PromptManager.
+            Create and initialize a PromptRunner.
             Arguments:
                 genre - the genre of the story: 'horror' | 'noir' | 'romance'
                 provider - the provider of the underlying API: GPTProvider.GEMINI or GPTProvider.OPENAI
@@ -199,11 +182,11 @@ class PromptManager(object):
 def main():
     parser = argparse.ArgumentParser(description="Generate content from a text prompt")
     parser.add_argument("--provider", help="The name of the provider for this GPT", type=str, choices=["gemini","openai"], default=None)
-    parser.add_argument("--system", help="Name of the file containing system instructions.", type=str, default=None)
+    # parser.add_argument("--system", help="Name of the file containing system instructions.", type=str, default=None)
     parser.add_argument("--genre", "-g", help="The story genre: horror, noir, or romance.", type=str, choices=["horror", "noir"],  default=None)
     parser.add_argument("--model", "-m", help="Model name", type=str, choices=['gemini-1.5-flash', 'gpt-4o', 'o1-preview', 'o1-mini'],  default=None )
-    parser.add_argument("--prompt", "-p", help="Provide a text prompt", type=str, default=None)
-    parser.add_argument("--source", help="The name of the file or MongoDB collection containing the prompt/training", default=None)
+    # parser.add_argument("--prompt", "-p", help="Provide a text prompt", type=str, default=None)
+    parser.add_argument("--prompt_source", "-p", help="file:<The name of the file containing the prompt/training>, text:<the actual text prompt>", default=None)
     parser.add_argument("--system_instructions", "-s", help="Name of the file containing system instructions", type=str, default=None)
     parser.add_argument("--count", help="Candidate count - #responses", type=int, default=1)
     parser.add_argument("--temperature", "-t", help="temperature controls the randomness of the output", type=float, default=1.0)
@@ -212,28 +195,29 @@ def main():
     parser.add_argument("--card_type", "-c", help="Optional Card type, default is Story", type=str, choices=card_types, default="Story")
     
     args = parser.parse_args()
-    if  not (args.prompt is None and args.source is None):    # need an embedded prompt, or a file containing a prompt
-        card_type = CardType[args.card_type.upper()]
-        provider = GPTProviders[args.provider.upper()]
-        if provider is GPTProviders.GEMINI:
-            gptProvider = GeminiGPTProvider(args.genre, provider, args.model, card_type=card_type, \
-                                       prompt_source=args.source, system_instructions_source=args.system_instructions, \
-                                       temperature=args.temperature, \
-                                       output_format=args.format, candidate_count=args.count  )
+    # if prompt_source is None, the default_prompt specified in GPTProvider is used
+    if args.prompt_source is None:
+        default_prompt = GPTProvider.DEFAULT_PROMPT
+        print(f"Warning: using the default prompt '{default_prompt}'")
+    card_type = CardType[args.card_type.upper()]
+    provider = GPTProviders[args.provider.upper()]
+    genre = GenreType[args.genre.upper()]
+    if provider is GPTProviders.GEMINI:
+        gptProvider = GeminiGPTProvider(genre, provider, args.model, card_type=card_type, \
+                                   prompt_source=args.prompt_source, system_instructions_source=args.system_instructions, \
+                                   temperature=args.temperature, \
+                                   output_format=args.format, candidate_count=args.count  )
 
-        elif provider is GPTProviders.OPENAI:
-            gptProvider = OPenAIGPTProvider(args.genre, provider, args.model, card_type=card_type, \
-                                       prompt_source=args.source, system_instructions_source=args.system_instructions, \
-                                       temperature=args.temperature, \
-                                       output_format=args.format, candidate_count=args.count  )
-        prompt = gptProvider.prompt
-        gptProvider.generate_content(prompt)
-        response_text = gptProvider.content
-        print(response_text)
-    
-    else:
-        print("Please provide a prompt: '--prompt <your text prompt>'")
-    
+    elif provider is GPTProviders.OPENAI:
+        gptProvider = OPenAIGPTProvider(genre, provider, args.model, card_type=card_type, \
+                                   prompt_source=args.prompt_source, system_instructions_source=args.system_instructions, \
+                                   temperature=args.temperature, \
+                                   output_format=args.format, candidate_count=args.count  )
+    prompt = gptProvider.prompt
+    gptProvider.generate_content(prompt)
+    response_text = gptProvider.content
+    print(response_text)
+        
     sys.exit()
 
 if __name__ == '__main__':
