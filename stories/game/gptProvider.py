@@ -8,6 +8,17 @@ from game.gameConstants import GPTProviders, GPTProviderKeyName, CardType, Genre
 from game.environment import Environment
 import os, sys
 from abc import ABC, abstractmethod, ABCMeta
+from pydantic import BaseModel
+
+class Card(BaseModel):
+    """StoryCard number, type and text
+    """
+    line_number:int
+    content:str
+    
+class Cards(BaseModel):
+    card_type:str
+    cards:list[Card]
 
 class GPTProvider(ABC):
     """
@@ -92,7 +103,8 @@ class GPTProvider(ABC):
         
         self._candidate_count = candidate_count
         self._output_format = output_format.lower()
-        self._content = None    # latest result of generate_content
+        self._content = None        # latest result of generate_content
+        self._content_dict = None   # latest result of generate_content as a Dict
         self._card_type = card_type
         # . 
         # Use higher values for more creative responses, and lower values for more deterministic responses. 
@@ -107,13 +119,13 @@ class GPTProvider(ABC):
     def configure_model(self, temp:float, output_format:str):
         """Define in derived classes.
         """
-        pass
+        ...
     
     @abstractmethod
     def generate_content(self, prompt:str=None):
         """Define in derived classes.
         """
-        pass
+        ...
     
     @property
     def genre(self)->GenreType:
@@ -215,6 +227,10 @@ class GPTProvider(ABC):
     @property
     def content(self)->str|None:
         return self._content
+    
+    @property
+    def content_dict(self)->dict:
+        return self._content_dict
 
     @property
     def default_prompt(self)->str:

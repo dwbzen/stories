@@ -7,15 +7,10 @@ Created on Nov 21, 2024
 from game.gptProvider import GPTProvider
 from game.gameConstants import GPTProviders, GPTProviderKeyName, CardType, GenreType
 from openai import OpenAI
-from pydantic import BaseModel, Field
+from typing import List, Dict
 import os
+from game.gptProvider import Cards
 
-class Card(BaseModel):
-    """StoryCard number, type and text
-    """
-    card_type:str = Field(default="Story")
-    line:int = Field(...)
-    content:str = Field(...)
 
 class OPenAIGPTProvider(GPTProvider):
     '''
@@ -47,17 +42,12 @@ class OPenAIGPTProvider(GPTProvider):
         """
         """
         self._prompt = prompt
-        if self.model_name.startswith("o1-") or self._system_instructions is None:    # o1-mini and o1-preview do not support system role
-                completion = self._client.chat.completions.create( model=self._model_name, \
-                    messages=[ {"role": "user", "content": self._prompt}  ]  )
-        elif self.system_instructions is not None:
-            completion = self._client.chat.completions.create( model=self._model_name, \
-                messages=[ \
-                    {"role": "system", "content": self.system_instructions}, \
-                    {"role": "user", "content": self._prompt} \
-                ]  )
-        
-        self._content = completion.choices[0].message    # ChatCompletionMessage
+        if self.output_format == "text":
+            self._generate_text_content()
+        elif self.output_format == "json":
+            self._generate_JSON_content()
+        else:
+            self._content = f"{self.output_format} is not supported"
     
     def _generate_text_content(self):
         if self.model_name.startswith("o1-") or self._system_instructions is None:    # o1-mini and o1-preview do not support system role
@@ -76,15 +66,25 @@ class OPenAIGPTProvider(GPTProvider):
         if self.model_name.startswith("o1-") or self._system_instructions is None:    # o1-mini and o1-preview do not support system role
                 completion = self._client.beta.chat.completions.parse( model=self._model_name, \
                     messages=[ {"role": "user", "content": self._prompt}  ], \
-                    response_format = Card )
+                    response_format = Cards )
                 
         elif self.system_instructions is not None:
             completion = self._client.chat.completions.create( model=self._model_name, \
                 messages=[ \
                     {"role": "system", "content": self.system_instructions}, \
                     {"role": "user", "content": self._prompt} ],
-                response_format = Card  )
+                response_format = Cards  )
         
-        self._content = completion.choices[0].message.parsed    # ChatCompletionMessage
-        
+        self._content = completion.choices[0].message.parsed    # Cards structure
+        self._content_dict = self.to_dict(self._content)
+    
+    def to_dict(self, cards:Cards)->dict:
+        cards_dict = {"card_type" : cards.card_type}
+        clist:List[Dict] = []
+        for card in cards.cards:
+            cdict = {"line" : card.line_number, "content" : card.content}
+            clist.append(cdict)
+        cards_dict["cards"] = clist
+        return cards_dict
+    
         
