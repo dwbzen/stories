@@ -4,7 +4,6 @@ Created on Nov 7, 2024
 @author: don_bacon
 '''
 
-import google.generativeai as genai
 import argparse
 import json
 import sys
@@ -12,7 +11,6 @@ from game.gameConstants import GPTProviders, CardType, GenreType
 from game.gptProvider import GPTProvider
 from game.geminiGPTProvider import GeminiGPTProvider
 from game.openAIGPTProvider import OPenAIGPTProvider
-from game.environment import Environment
 import typing_extensions as typing
 from google.ai.generativelanguage_v1.types.generative_service import GenerateContentResponse
 from openai import OpenAI
@@ -34,10 +32,8 @@ class PromptRunner(object):
 def main():
     parser = argparse.ArgumentParser(description="Generate content from a text prompt")
     parser.add_argument("--provider", help="The name of the provider for this GPT", type=str, choices=["gemini","openai"], default=None)
-    # parser.add_argument("--system", help="Name of the file containing system instructions.", type=str, default=None)
     parser.add_argument("--genre", "-g", help="The story genre: horror, noir, or romance.", type=str, choices=["horror", "noir"],  default=None)
     parser.add_argument("--model", "-m", help="Model name", type=str, choices=['gemini-1.5-flash', 'gpt-4o', 'o1-preview', 'o1-mini'],  default=None )
-    # parser.add_argument("--prompt", "-p", help="Provide a text prompt", type=str, default=None)
     parser.add_argument("--prompt_source", "-p", help="file:<The name of the file containing the prompt/training>, text:<the actual text prompt>", default=None)
     parser.add_argument("--system_instructions", "-s", help="Name of the file containing system instructions", type=str, default=None)
     parser.add_argument("--count", help="Candidate count - #responses", type=int, default=1)

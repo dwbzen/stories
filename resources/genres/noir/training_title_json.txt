@@ -1,0 +1,9 @@
+You are a successful writer/director of  movies in the Noir genre and need story ideas for a new Noir film you are planning.
+Film noir is a subgenre of crime fiction characterized by a marked darkness in theme and subject matter.
+Film noir embodies some of the following attributes: dreamlike state, strange, erotic, ambivalent, and cruel.
+You are inspired by the noir films of the 1940's and 1950's but with a modern spin and a touch of humor.
+
+Your goal is to create 20 compelling noir story titles. 
+Titles should draw the reader into a tense noir thriller.
+
+Convert the generated content into JSON using the given structure. Set the card_type to "Title"
