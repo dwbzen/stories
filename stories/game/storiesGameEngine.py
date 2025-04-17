@@ -57,7 +57,8 @@ class StoriesGameEngine(object):
     """
 
     _lock = Lock()
-
+    logger = logging.getLogger(__name__)
+        
     def __init__(self, stories_game:StoriesGame=None, game_id:str=None, loglevel='debug', installationId=""):
         """
         """
@@ -73,6 +74,7 @@ class StoriesGameEngine(object):
         self._game_id = self._create_game_id(installationId) if game_id is None else game_id
         
         self._init_logging(loglevel, self._game_id)
+        
         
     def _init_logging(self, loglevel:str, game_id):
         
@@ -100,7 +102,10 @@ class StoriesGameEngine(object):
             os.mkdir(self._gamefile_folder)
         
         # configure the logger
-        self._logger = Logger(self._game_id, self._logfile_path, level=level)
+        # self._logger = Logger(self._game_id, self._logfile_path, level=level)
+        logging.basicConfig(filename=self._logfile_path, encoding='utf-8', level=level, format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+        self.logger = StoriesGameEngine.logger
+        self.logger.debug(f"Logging configured successfully for {game_id}, level {level} ")
     
     def _create_game_id(self, installation_id) ->str :
         """Create a unique game id (guid) for this game.
@@ -118,7 +123,7 @@ class StoriesGameEngine(object):
         txt = " ".join(message)
         if self._debug:
             print(txt)
-        logging.info(txt)
+        self.logger.info(txt)
             
     def log_message(self, *message) -> CommandResult:
         """The command version of log.

@@ -1,0 +1,26 @@
+{
+	"_id" : "689111",
+	"Title" : "Command Help",
+	"commands" : [ "add", "add_team", "deal", "discard", "done", "draw", "end", "find", "game_status", "help", "info", "insert", "list", "list_numbered", "ln", "lnj", "log_message", "ls", "next", "pass_card", "play", "play_type", "publish", "rank", "read", "re_read", "replace", "rn", "save", "set", "show", "start", "status", "team_info", "update" ],
+	"command_details" : [
+		{
+			"name" : "discard",
+			"arguments" : "card number",
+			"description" : [ 
+				"discard the selected card and place it on top of the game discard pile"
+			]
+		},
+		{
+			"name" : "draw",
+			"arguments" : "'new', 'discard', <card_type> or 'action' <action_type>",
+			"description" : [
+				"draw a card and place it in your hand. Options are:",
+				" draw new - draw a new card",
+				" draw discard - draw the top card from the discard deck",
+				" draw <card_type> - for test purposes only, draw a specific card_type: title, opening, story, closing",
+				" draw action <action_type>  - for test purposes only, draw an ActionCard of a specific type:",
+				"   meanwhile, draw_new, trade_lines, steal_lines, stir_pot, change_name, reorder_lines, compose, call_in_favors "
+			]
+		}
+	]
+}

@@ -281,5 +281,9 @@ class StoriesGame(StoriesObject):
             cards.append(str(story_card))
             next_index += 1
         return cards
-        
+    
+    def to_JSON(self)->str:
+        """Implement the to_JSON abstract method
+        """
+        return self._game_state.to_JSON()
     

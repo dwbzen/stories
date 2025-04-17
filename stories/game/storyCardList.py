@@ -9,7 +9,7 @@ from game.storiesObject import StoriesObject
 from game.gameConstants import CardType, ActionType
 from typing import List, Dict
 import json, random
-from collections.abc import Iterator
+from collections.abc import Iterator, Collection
 
 class StoryCardList(StoriesObject):
     '''

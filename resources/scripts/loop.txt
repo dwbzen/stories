@@ -1,0 +1,18 @@
+limit = 20;
+counter = 0;
+while counter < limit {
+	draw story
+	play last
+	next
+	counter += 1;
+}
+#dwb
+draw closing
+play last
+read
+next
+# bdb
+draw closing
+play last
+read
+next

@@ -10,8 +10,8 @@ start game
 #
 import random;
 # draw some random numbers
-limit = 20;
-counter = 0;
+local limit = 20
+local counter = 0
 while counter < limit {
  x=random.randint(1,12);
  print(f"x={x}");

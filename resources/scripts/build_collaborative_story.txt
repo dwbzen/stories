@@ -26,8 +26,8 @@ draw story
 play last
 next
 #
-limit = 6;
-counter = 0;
+local limit = 10
+local counter = 0
 while counter < limit {
 	draw story
 	play last
@@ -41,3 +41,4 @@ read
 next
 next
 # dwb
+end game

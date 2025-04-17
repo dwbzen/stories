@@ -31,6 +31,7 @@ class GameRunner(object):
               are set from stories_game
             
     """
+    
     def __init__(self, installationId:str, genre:str, total_points:int, log_level:str, game_mode:str, \
                  play_mode:PlayMode, source:str, aliases:List[str], stories_game:StoriesGame|None=None):
         """
@@ -49,7 +50,7 @@ class GameRunner(object):
         self._stories_game = stories_game
         self._env = Environment.get_environment()
         self._resource_folder = self._env.get_resource_folder()     # base resource folder
-        
+
         if stories_game is None:          # create a new StoriesGame
             self.game_engine = StoriesGameEngine(stories_game=None, game_id=None, loglevel=log_level, installationId=installationId)
 
@@ -134,6 +135,9 @@ class GameRunner(object):
             
         result = self.game_engine.execute_command(cmd, aplayer)
         return result
+    
+    def log_message(self, message:str):
+        print(message)
 
     def run_game(self):
         """Run the main player input loop. Each player in turn is prompted
@@ -184,7 +188,7 @@ class GameRunner(object):
             All statements end in a "{" (for loop init), "}" (end loop) or ";" to differentiate from game commands.
             The following statements are supported:
             assignment
-               (variable) = (value)
+               local (variable) = (value)
             looping
                while (expression) {
                    (statements and/or commands):
@@ -194,7 +198,7 @@ class GameRunner(object):
                else:
                    (commands)
             statements ending with ";"  are evaluated with the Python exec() or eval() functions.
-            assignments are evaluated with exec(), "counter=1"  ->  exec("counter=1")
+            assignments are evaluated with exec(), "local counter = 1"  ->  add counter to locals dict with value 1
             The while condition is evaluated with eval(), "while counter<limit" -> eval("counter<limit")
             other statements evaluated with exec(), "counter+=1"  ->  exec("counter+=1")
             The logic assumes the loop body will be evaluated at least once.
@@ -214,6 +218,7 @@ class GameRunner(object):
         fp.close()
         #
         result = None
+        script_locals = {}
         while line_number < script_lines:
             line = scriptText[line_number]
             if len(line) > 0:
@@ -224,31 +229,37 @@ class GameRunner(object):
                 
                 elif cmd.startswith("#"):    # comment line
                     if log_comments:
-                        logging.info(f'log_message {cmd}')
+                        self.log_message(cmd)
                         result = None
                     else:
                         result = None
                         
                 elif cmd.startswith("add player "):
                     result = self.execute_command(cmd, None)
+                
+                elif cmd.startswith("local "):    # declare a local variable - add to script_locals
+                    _split = cmd.split(" ", maxsplit=3)    # at most 4 elements
+                    script_locals[_split[1]] = eval(_split[3])
                     
                 elif cmd.endswith(";"):    # use exec()
                     statement = cmd[:-1]
+                    # logging.info(f'exec statement: {statement}')
                     try:
-                        exec(statement)
+                        exec(statement, locals=script_locals)
                         result = CommandResult(CommandResult.SUCCESS, statement, False)
                     except Exception as ex:
                         message = f'"{statement}" : Invalid exec statement\nexception: {str(ex)}'
                         result = CommandResult(CommandResult.ERROR,  message,  False, exception=ex)
-                        logging.error(message)
+                        self.log_message(message)
                         
                 elif cmd.endswith("{"):   # a while loop, execute the condition with eval()
+                    l = locals()
                     ind = cmd.find(" ")
                     if ind > 0:    # isolate the conditional: if, while
                         condition = cmd[:-1][ind+1:]    # assumes "while "
                         result = CommandResult(CommandResult.SUCCESS, condition, False)
                         try:
-                            continue_loop = eval(condition)
+                            continue_loop = eval(condition, locals=script_locals)
                             if not continue_loop:
                                 line_number = loop_end
                             else:
@@ -256,9 +267,9 @@ class GameRunner(object):
                         except Exception as ex:
                             message = f'"{condition}" : Invalid eval statement\nexception: {str(ex)}'
                             result = CommandResult(CommandResult.ERROR,  message,  False, exception=ex)
-                            logging.error(message)
+                            self.log_message(message)
                     else:
-                        logging.warn(f"{cmd} is not a valid condition")
+                        self.log_message(f"{cmd} is not a valid condition")
                         
                 elif cmd.endswith("}"):    # end of the loop
                     loop_end = line_number
@@ -297,7 +308,7 @@ def main():
     
     parser.add_argument("--script", help="Execute script file", type=str, default=None)
     parser.add_argument("--delay", help="Delay a specified number of seconds between script commands", type=int, default=0)
-    parser.add_argument("--comments", "-c", help="Log comment lines when running a script", type=str, choices=['y','Y', 'n', 'N'], default='Y')
+    parser.add_argument("--comments", "-c", help="Log comment lines when running a script", type=str, choices=['y','Y', 'n', 'N'], default='y')
     
     parser.add_argument("--loglevel", help="Set Python logging level", type=str, choices=["debug","info","warning","error","critical"], default="warning")
     parser.add_argument("--genre", help="Story genre", type=str, choices=["horror","romance","noir"], default="horror")

@@ -9,7 +9,7 @@
 		"meanwhile", "draw_new", "trade_lines", "steal_lines", "stir_pot", "change_name", "reorder_lines", "compose", "call_in_favors"
 	],
 	"characters" : [ "Don", "Mark", "Cheryl", "Suzanne" ],
-	"commands" : [ "add", "discard", "draw", "done", "end", "help", "info", "insert", "list", "ln", "ls", "next", "pass_card", "play", "rank", "read", "replace", "rn", "show", "status", "swap" ],
+	"commands" : [ "add", "add_team", "deal", "discard", "done", "draw", "end", "find", "game_status", "help", "info", "insert", "list", "list_numbered", "ln", "lnj", "log_message", "ls", "next", "pass_card", "play", "play_type", "publish", "rank", "read", "re_read", "replace", "rn", "save", "set", "show", "start", "status", "team_info", "update" ],
 	"command_details" : [
 		{
 			"name" : "discard",

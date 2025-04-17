@@ -15,33 +15,23 @@ next
 draw title
 play last
 next
-#dwb
+# dwb
 draw opening
 play last
 next
 # bdb
 draw opening
 play last
+read
 next
+# dwb
+read
 #
-limit = 20;
-counter = 0;
+local limit = 5
+local counter = 0
 while counter < limit {
-	draw story
-	play last
-	next
-	counter += 1;
+ counter +=1 ;
+ print(counter);
 }
-#dwb
-draw closing
-play last
-read
-next
-# bdb
-draw closing
-play last
-read
-next
-#
 end game
 

@@ -4,10 +4,11 @@ Created on Dec 7, 2023
 @author: don_bacon
 '''
 
+from abc import ABC,abstractmethod
 import jsonpickle
 
-class StoriesObject(object):
-    """Base class for object that have a JSON representation.
+class StoriesObject(ABC):
+    """Abstract Base class for object that have a JSON representation.
     """
 
 
@@ -17,11 +18,11 @@ class StoriesObject(object):
         '''
         pass
 
-    def to_JSON(self):
+    @abstractmethod
+    def to_JSON(self)->str:
         """Returns my JSON representation. Abstract class.
-        
         """
-        return None
+        ...
     
     def json_pickle(self):
         """A complete JSON representation of this object using jsonpickle.
@@ -31,6 +32,6 @@ class StoriesObject(object):
     def __repr__(self):
         return self.json_pickle()
     
-    def __str__(self):
+    def __str__(self)->str:
         return self.to_JSON()
     
