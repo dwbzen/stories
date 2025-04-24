@@ -41,13 +41,11 @@ class StoryCardLoader(object):
     def initialize_story_card_deck(self):
         deck = { "Help" : f"{self.genre.value} story card deck"}
         deck["card_types_list"] = self.story_card_template["card_types_list"]   # "Title", "Opening", "Opening/Story", "Story", "Closing"
-        self._card_types_list = []
         #
         # convert the card types to lower case for use in commands
         # "title", "opening", "opening/story", "story", "closing", "action"
         #
-        for ct in deck["card_types_list"]:
-            self._card_types_list.append(ct.lower())
+        self._card_types_list = [ct.lower() for ct in deck["card_types_list"]]
             
         deck["action_types_list"] = self.story_card_template["action_types_list"]
         deck["card_types"] = self.story_card_template["card_types"]
