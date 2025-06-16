@@ -424,9 +424,9 @@ class GameEngineCommands(object):
             If used in a script, the syntax is: num=find story
             and used in a conditional, for example: if num>0:
         """
-        result = CommandResult()
+
         player:Player = self.game_state.current_player 
-        result = self._get_player_for_play_mode(player)    # the Player maintaining the story
+        result:CommandResult = self._get_player_for_play_mode(player)    # the Player maintaining the story
         target_player:Player = result.properties["target_player"]
         ct = CardType[card_type.upper()]
         at = ActionType[action_type.upper()] if action_type is not None else None
@@ -639,7 +639,7 @@ class GameEngineCommands(object):
             if self.stories_game.game_parameters.automatic_draw:    # and self.play_mode is PlayMode.COLLABORATIVE:
                 num_cards = self.stories_game.game_parameters.max_cards_in_hand - player.story_card_hand.hand_size()
                 if num_cards > 0:
-                    for i in range(num_cards):
+                    for _ in range(num_cards):
                         draw_result = self.draw(what="new", action_type=None)
                         result.message = f"{result.message} {draw_result.message}"
             

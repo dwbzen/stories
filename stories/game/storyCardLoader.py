@@ -5,7 +5,6 @@ Created on Aug 20, 2024
 '''
 
 from game.gameConstants import GenreType, GameConstants, CardType, ActionType
-import json
 import pymongo
 from typing import Dict, List
 from game.storyCard import StoryCard
@@ -222,7 +221,7 @@ class StoryCardLoader(object):
             max_arguments = action.get("max_arguments", 0)
             min_arguments = action.get("min_arguments", 0)
             story_element = action.get("story_element", 0)==1
-            for i in range(qty):
+            for _ in range(qty):
                 storyCard = StoryCard(self.genre, card_type, text, number, action_type, min_arguments, max_arguments, story_element)
                 self._deck_cards.append(storyCard)
                 number+=1

@@ -1,0 +1,37 @@
+# creates a Stories game with 2 players
+add player Don DWB Don dwbzen@gmail.com
+add director Don DWB
+start game
+
+# DWB
+# director can add players
+add player Brian BDB Brian brian.bacon01@gmail.com
+# dwb
+draw title
+play last
+next
+# bdb
+draw title
+play last
+next
+#
+local limit = 20
+local counter = 0
+while counter < limit {
+	draw story
+	play last
+	next
+	counter += 1;
+}
+# dwb
+draw closing
+play last
+read
+next
+# bdb
+draw closing
+play last
+read
+next
+# dwb
+end game

@@ -25,6 +25,18 @@ class CardType(Enum):
     STORY = "Story"
     CLOSING = "Closing"
     ACTION = "Action"
+    
+    def isopening(self)->bool:
+        # returns True is CardType can serve as an Opening
+        return self in {self.OPENING, self.OPENING_STORY}
+    def isstory(self) -> bool:
+        # returns True is CardType can serve as a Story
+        return self in {self.STORY, self.OPENING_STORY}
+    
+    @staticmethod
+    def _istitle(txt:str)-> bool:
+        # returns True if an arbitrary str matches CardType.TITLE
+        return txt.title() == CardType.TITLE.value
 
 class PlayerLevel(Enum):
     """PlayerLevel determines what commands & action cards are available to a player

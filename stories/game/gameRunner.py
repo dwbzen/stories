@@ -149,7 +149,7 @@ class GameRunner(object):
         game_state = self._stories_game.game_state
         nplayers = game_state.number_of_players()
         while not game_over:
-            for i in range(nplayers):
+            for _ in range(nplayers):
                 # 
                 current_player = game_state.current_player
                 pn = current_player.number
@@ -326,7 +326,6 @@ def main():
     installationId = 'DWBZen2024'  # uniquely identifies 'me' as the game creator
 
     log_comments = args.comments.lower()=='y'
-    gameId = args.gameid
     current_player = None
     player_names = args.names
     players = None

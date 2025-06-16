@@ -3,7 +3,6 @@ Created on Dec 7, 2023
 
 @author: don_bacon
 '''
-from game.commandResult import CommandResult
 from game.storiesObject import StoriesObject
 from game.player import Player
 from game.environment import Environment
@@ -15,10 +14,7 @@ from game.gameState import GameState
 from game.dataManager import DataManager
 from collections import deque
 from datetime import datetime
-from game.logger import Logger
-import json
 from typing import List
-import logging
 
 
 class StoriesGame(StoriesObject):
@@ -275,7 +271,7 @@ class StoriesGame(StoriesObject):
         deck_cards = self._story_card_deck.deck_cards
         cards = []
         next_index = self._story_card_deck.next_index
-        for i in range(next_index, len(indexes)):
+        for _ in range(next_index, len(indexes)):
             ind = indexes[next_index]
             story_card = deck_cards[ind]
             cards.append(str(story_card))

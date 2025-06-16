@@ -7,7 +7,7 @@ import json
 from game.storiesObject import StoriesObject
 from game.storyCard import StoryCard
 from game.gameUtils import GameUtils
-from game.gameConstants import GenreType, GameConstants, CardType, ActionType
+from game.gameConstants import GenreType, CardType, ActionType
 
 from typing import List, Dict
 
@@ -240,7 +240,7 @@ class CardDeck(StoriesObject):
         """
         assert(ncards > 0)
         card_list = []
-        for i in range(ncards):
+        for _ in range(ncards):
             card_list.append(self.draw())
         return card_list
     

@@ -7,7 +7,6 @@ Created on Dec 31, 2024
 import argparse
 from game.environment import Environment
 from game.commandResult import CommandResult
-import sys
 import json
 
 class Renumber(object):
